@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Miei Compiti</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 15px; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .materia { font-weight: bold; color: #007bff; }
+        .data { font-size: 0.8em; color: #666; }
+    </style>
+</head>
+<body>
+    <h2>Registro Compiti</h2>
+    <div id="lista-compiti">Caricamento in corso...</div>
+
+    <script>
+        // Sostituisci con l'URL reale del tuo file JSON su GitHub Pages
+        const url = 'https://github.io';
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const contenitore = document.getElementById('lista-compiti');
+                contenitore.innerHTML = ''; // Svuota il testo di caricamento
+                
+                data.forEach(compito => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="materia">${compito.materia}</div>
+                        <div class="data">Scadenza: ${compito.data}</div>
+                        <p>${compito.descrizione}</p>
+                    `;
+                    contenitore.appendChild(card);
+                });
+            })
+            .catch(error => {
+                document.getElementById('lista-compiti').innerText = 'Errore nel caricamento.';
+                console.error(error);
+            });
+    </script>
+</body>
+</html>
