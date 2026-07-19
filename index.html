@@ -16,30 +16,46 @@
     <div id="lista-compiti">Caricamento in corso...</div>
 
     <script>
-        // Sostituisci con l'URL reale del tuo file JSON su GitHub Pages
-        const url = './compiti.json';
+    // Questo metodo (percorso relativo) funziona ovunque senza configurare link lunghi!
+    const url = './compiti.json'; 
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const contenitore = document.getElementById('lista-compiti');
-                contenitore.innerHTML = ''; // Svuota il testo di caricamento
-                
-                data.forEach(compito => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <div class="materia">${compito.materia}</div>
-                        <div class="data">Scadenza: ${compito.data}</div>
-                        <p>${compito.descrizione}</p>
-                    `;
-                    contenitore.appendChild(card);
-                });
-            })
-            .catch(error => {
-                document.getElementById('lista-compiti').innerText = 'Errore nel caricamento.';
-                console.error(error);
+    fetch(url)
+        .then(response => {
+            // Se il file non viene trovato (Errore 404), te lo dice chiaramente
+            if (!response.ok) {
+                throw new Error(`File non trovato o errore server (Stato: ${response.status})`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const contenitore = document.getElementById('lista-compiti');
+            contenitore.innerHTML = ''; // Svuota il testo di caricamento
+            
+            if (data.length === 0) {
+                contenitore.innerHTML = '<p>Nessun compito presente!</p>';
+                return;
+            }
+
+            data.forEach(compito => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="materia">${compito.materia}</div>
+                    <div class="data">Scadenza: ${compito.data}</div>
+                    <p>${compito.descrizione}</p>
+                `;
+                contenitore.appendChild(card);
             });
-    </script>
+        })
+        .catch(error => {
+            // Mostra sul display del telefono l'errore esatto per capire cosa manca
+            document.getElementById('lista-compiti').innerHTML = `
+                <div style="color: red; font-weight: bold;">Errore nel caricamento.</div>
+                <div style="font-size: 0.8em; color: #666;">Dettaglio: ${error.message}</div>
+            `;
+            console.error(error);
+        });
+</script>
+
 </body>
 </html>
