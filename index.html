@@ -15,6 +15,51 @@
     <h2>Compiti/Verifiche
     version 1.0</h2>
     <div id="lista-compiti">Caricamento in corso...</div>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Compiti</title>
+    <style>
+        /* Uno stile veloce per rendere la finestrella più moderna */
+        dialog {
+            border: none;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            max-width: 300px;
+        }
+        /* Questo colora lo sfondo dietro la finestrella */
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Il pulsante per aprire la finestrella -->
+    <button onclick="ApriFinestra()">Apri Avviso</button>
+
+    <!-- 2. La finestrella HTML (nasce invisibile) -->
+    <dialog id="Avviso">
+        <h3>Nota</h3>
+        <p>Ciao!Per avvisarti,alcuni compiti potrebbero mancare,non essere accurati ecc..quindi cerca di verificare prima i dati con i tuoi compagni o dal registro(o semplicente ascolta all insegnante durante la classe).Quindi questo sito deve essere usato per aiutare,NON per sostituire,quindi non incolparmi!Grazie!
+          Versione 1.0 ScuolaVeloce</p>
+        <!-- Il pulsante interno per chiuderla -->
+        <button onclick="ChiudiFinestra()">Chiudi</button>
+    </dialog>
+
+    <!-- 3. Il codice JavaScript per far funzionare i pulsanti -->
+    <script>
+        const finestra = document.getElementById('miaFinestra');
+
+        function ApriFinestra() {
+            finestra.showModal(); // Apre la finestrella al centro con lo sfondo scuro
+        }
+
+        function ChiudiFinestra() {
+            finestra.close(); // Chiude la finestrella
+        }
+    </script>
 
     <script>
     // Questo metodo (percorso relativo) funziona ovunque senza configurare link lunghi!
