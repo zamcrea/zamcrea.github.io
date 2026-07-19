@@ -12,7 +12,8 @@
     </style>
 </head>
 <body>
-    <h2>Registro Compiti</h2>
+    <h2>Compiti/Verifiche
+    version 1.0</h2>
     <div id="lista-compiti">Caricamento in corso...</div>
 
     <script>
@@ -23,7 +24,7 @@
         .then(response => {
             // Se il file non viene trovato (Errore 404), te lo dice chiaramente
             if (!response.ok) {
-                throw new Error(`File non trovato o errore server (Stato: ${response.status})`);
+                throw new Error(`File non trovato o errore server(404) (Stato: ${response.status})`);
             }
             return response.json();
         })
@@ -32,7 +33,7 @@
             contenitore.innerHTML = ''; // Svuota il testo di caricamento
             
             if (data.length === 0) {
-                contenitore.innerHTML = '<p>Nessun compito presente!</p>';
+                contenitore.innerHTML = '<p>Nessun compito presente,ritieniti fortunato..</p>';
                 return;
             }
 
@@ -50,7 +51,7 @@
         .catch(error => {
             // Mostra sul display del telefono l'errore esatto per capire cosa manca
             document.getElementById('lista-compiti').innerHTML = `
-                <div style="color: red; font-weight: bold;">Errore nel caricamento.</div>
+                <div style="color: red; font-weight: bold;">Sembra che qualcosa sia andato storto...non panic-are,battuta orrenda..</div>
                 <div style="font-size: 0.8em; color: #666;">Dettaglio: ${error.message}</div>
             `;
             console.error(error);
