@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScuolaVeloce</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #c9d9f0; padding: 15px; }
+        body { font-family: Arial, sans-serif; background: #b0adab; padding: 15px; }
         .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .materia { font-weight: bold; color: #d42828; }
-        .data { font-size: 0.8em; color: #060a0d; }
+        .materia { font-weight: bold; color: #0d0d0d; }
+        .data { font-size: 0.8em; color: #6e0202; }
     </style>
 </head>
 <body>
     <h2>Compiti/Verifiche</h2>
     <p>Ciao!Per avvisarti,alcuni compiti potrebbero mancare,non essere accurati ecc..quindi cerca di verificare prima i dati con i tuoi compagni o dal registro(o semplicente ascolta all insegnante durante la classe).Quindi questo sito deve essere usato per aiutare,NON per sostituire,quindi non incolparmi!Grazie!.</p>
-   <p>Versione 1.0</p>
+   <p>Versione 0.7.3</p>
     <div id="lista-compiti">Caricamento in corso...</div>
  
     <script>
@@ -25,7 +25,7 @@
         .then(response => {
             // Se il file non viene trovato (Errore 404), te lo dice chiaramente
             if (!response.ok) {
-                throw new Error(`File non trovato o errore server(404) (Stato: ${response.status})`);
+                throw new Error(`File non trovato o errore server (404) (Stato: ${response.status})`);
             }
             return response.json();
         })
@@ -52,7 +52,7 @@
         .catch(error => {
             // Mostra sul display del telefono l'errore esatto per capire cosa manca
             document.getElementById('lista-compiti').innerHTML = `
-                <div style="color: red; font-weight: bold;">Sembra che qualcosa sia andato storto...non panic-are,battuta orrenda..</div>
+                <div style="color: red; font-weight: bold;">Sembra che qualcuno ha toccato qualcosa di sbagliato.."Blame Kernel"</div>
                 <div style="font-size: 0.8em; color: #666;">Dettaglio: ${error.message}</div>
             `;
             console.error(error);
