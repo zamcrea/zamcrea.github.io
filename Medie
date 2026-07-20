@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calcolatore Medie Scolastiche</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; color: #000000; }
+        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #6f24c9; margin-top: 0; }
+        .box-media { background: #e7f3ff; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.2em; font-weight: bold; color: #0056b3; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #b1e0bc; }
+        .lista-voti { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .voto-item { display: flex; justify-content: space-between; background: #f8f9fa; padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; font-size: 0.9em; }
+        .btn-cancella { color: #dc3545; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Calcola la tua Media</h2>
+    
+    <!-- Visualizzazione del Risultato -->
+    <div class="box-media">
+        Media Attuale: <span id="valore-media">0.00</span>
+    </div>
+
+    <!-- Form di Inserimento -->
+    <div class="form-group">
+        <label for="voto">Inserisci il Voto (es. 2 o 8.5):</label>
+        <input type="number" id="voto" step="0.25" min="1" max="10" placeholder="Es. 7.5">
+    </div>
+
+    <div class="form-group">
+        <label for="peso">Tipologia Voto (Peso):</label>
+        <select id="peso">
+            <option value="1">Scritto / Pratico (Peso 100%)</option>
+            <option value="0.5">Orale / Test (Peso 50%)</option>
+        </select>
+    </div>
+
+    <button onclick="aggiungiVoto()">Aggiungi Voto</button>
+
+    <!-- Elenco dei Voti Inseriti -->
+    <div class="lista-voti">
+        <label>Voti inseriti:</label>
+        <div id="elenco">Nessun voto inserito.</div>
+    </div>
+</div>
+
+<script>
+    // Array in cui salviamo i voti inseriti dall'utente
+    let registroVoti = [];
+
+    function aggiungiVoto() {
+        const votoInput = document.getElementById('voto');
+        const pesoInput = document.getElementById('peso');
+        
+        const voto = parseFloat(votoInput.value);
+        const peso = parseFloat(pesoInput.value);
+
+        // Controllo se il voto è valido
+        if (isNaN(voto) || voto < 1 || voto > 10) {
+            alert("Adoro come ci stavi provando!Inserisci numeri da 1 a 10,sono sicuro che alla verifica non hai preso un voto così alto...");
+            return;
+        }
+
+        // Aggiungo il voto all'elenco
+        registroVoti.push({ voto: voto, peso: peso });
+
+        // Resetto il campo di testo per il prossimo inserimento
+        votoInput.value = '';
+
+        // Aggiorno la grafica e ricalcolo la media
+        aggiornaSchermata();
+    }
+
+    function cancellaVoto(index) {
+        // Rimuovo il voto selezionato dall'array
+        registroVoti.splice(index, 1);
+        aggiornaSchermata();
+    }
+
+    function aggiornaSchermata() {
+        const elencoDiv = document.getElementById('elenco');
+        const mediaSpan = document.getElementById('valore-media');
+
+        if (registroVoti.length === 0) {
+            elencoDiv.innerHTML = "Devo dire,molto utile non mettere dei voti...";
+            mediaSpan.innerText = "0.00";
+            return;
+        }
+
+        // Genero l'elenco visivo dei voti
+        elencoDiv.innerHTML = '';
+        let sommaVotiProdotti = 0;
+        let sommaPesi = 0;
+
+        registroVoti.forEach((item, index) => {
+            // Calcolo per la media ponderata
+            sommaVotiProdotti += (item.voto * item.peso);
+            sommaPesi += item.peso;
+
+            // Creo l'elemento grafico nella lista
+            const tipo = item.peso === 1 ? "Scritto" : "Orale";
+            const div = document.createElement('div');
+            div.className = 'voto-item';
+            div.innerHTML = `
+                <span><strong>${item.voto}</strong> (${tipo})</span>
+                <span class="btn-cancella" onclick="cancellaVoto(${index})">Elimina</span>
+            `;
+            elencoDiv.appendChild(div);
+        });
+
+        // Calcolo finale della media ponderata e arrotondamento a 2 decimali
+        const mediaFinale = sommaVotiProdotti / sommaPesi;
+        mediaSpan.innerText = mediaFinale.toFixed(2);
+    }
+</script>
+
+</body>
+</html>
