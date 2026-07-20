@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScuolaVeloce</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #b0adab; padding: 15px; }
+        body { font-family: Arial, sans-serif; background: #b1e3d6; padding: 15px; }
         .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .materia { font-weight: bold; color: #0d0d0d; }
         .data { font-size: 0.8em; color: #6e0202; }
@@ -53,7 +53,7 @@
             // Mostra sul display del telefono l'errore esatto per capire cosa manca
             document.getElementById('lista-compiti').innerHTML = `
                 <div style="color: red; font-weight: bold;">Sembra che qualcuno ha toccato qualcosa di sbagliato.."Blame Kernel"</div>
-                <div style="font-size: 0.8em; color: #666;">Dettaglio: ${error.message}</div>
+                <div style="font-size: 0.8em; color: #ba0606;">Dettaglio: ${error.message}</div>
             `;
             console.error(error);
         });
