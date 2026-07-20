@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orario,yeah</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; }
+        h2 { text-align: center; color: #007bff; margin-bottom: 20px; }
+        
+        /* Stile delle schedine dei giorni */
+        .giorno-card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #007bff; }
+        .rientro { border-left: 5px solid #a8d490; } /* Rosso per i giorni con rientro da 8 ore */
+        
+        .giorno-titolo { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .badge { font-size: 0.6em; padding: 4px 8px; border-radius: 12px; color: white; font-weight: bold; }
+        .badge-normale { background: #de9c18; }
+        .badge-rientro { background: #dc3545; }
+        
+        /* Stile delle singole ore */
+        .ora-riga { display: flex; padding: 8px 0; border-bottom: 1px solid #f1f1f1; font-size: 0.95em; align-items: center; }
+        .ora-riga:last-child { border-bottom: none; }
+        .ora-tempo { width: 110px; color: #666; font-weight: bold; font-size: 0.9em; }
+        .ora-materia { flex-grow: 1; color: #2252550; font-weight: 500; }
+        .ora-pranzo { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>️ Orario Materieeee </h2>
+
+    <!-- LUNEDÌ (5 Ore) -->
+    <div class="giorno-card">
+        <div class="giorno-titolo">Lunedì <span class="badge badge-normale">5 Ore</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Educazione Fisica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+    </div>
+
+    <!-- MARTEDÌ (8 Ore - Rientro) -->
+    <div class="giorno-card rientro">
+        <div class="giorno-titolo">Martedì <span class="badge badge-rientro">8 Ore (Rientro)</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+        <div class="ora-riga"><div class="ora-tempo">13:30 - 14:30</div><div class="ora-materia ora-pranzo">Pranzo</div></div>
+        <div class="ora-riga"><div class="ora-tempo">14:30 - 15:30</div><div class="ora-materia">Musica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">15:30 - 16:30</div><div class="ora-materia">Musica</div></div>
+    </div>
+
+    <!-- MERCOLEDÌ (5 Ore) -->
+    <div class="giorno-card">
+        <div class="giorno-titolo">Mercoledì <span class="badge badge-normale">5 Ore</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Educazione Fisica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+    </div>
+
+    <!-- GIOVEDÌ (5 Ore) -->
+    <div class="giorno-card">
+        <div class="giorno-titolo">Giovedì <span class="badge badge-normale">5 Ore</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Educazione Fisica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+    </div>
+
+    <!-- VENERDÌ (8 Ore - Rientro) -->
+    <div class="giorno-card rientro">
+        <div class="giorno-titolo">Venerdì <span class="badge badge-rientro">8 Ore (Rientro)</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+        <div class="ora-riga"><div class="ora-tempo">13:30 - 14:30</div><div class="ora-materia ora-pranzo">Pranzo</div></div>
+        <div class="ora-riga"><div class="ora-tempo">14:30 - 15:30</div><div class="ora-materia">Musica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">15:30 - 16:30</div><div class="ora-materia">Musica</div></div>
+    </div>
+
+    <!-- SABATO (5 Ore) -->
+    <div class="giorno-card">
+        <div class="giorno-titolo">Sabato <span class="badge badge-normale">5 Ore</span></div>
+        <div class="ora-riga"><div class="ora-tempo">08:30 - 09:30</div><div class="ora-materia">Italiano</div></div>
+        <div class="ora-riga"><div class="ora-tempo">09:30 - 10:30</div><div class="ora-materia">Matematica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">10:30 - 11:30</div><div class="ora-materia">Scienze</div></div>
+        <div class="ora-riga"><div class="ora-tempo">11:30 - 12:30</div><div class="ora-materia">Educazione Fisica</div></div>
+        <div class="ora-riga"><div class="ora-tempo">12:30 - 13:30</div><div class="ora-materia">Storia</div></div>
+    </div>
+</div>
+
+</body>
+</html>
