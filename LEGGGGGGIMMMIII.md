@@ -2,7 +2,7 @@ SCUOLAVELOCE
 
 un progetto creato per facilitare il lavoro:D
 intendo lavoro compiti lol
-cirivediamo a settembre!
+ci rivediamo a settembre!
 
 
 (il progetto è open source)
