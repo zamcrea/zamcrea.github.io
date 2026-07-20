@@ -14,12 +14,12 @@
 <body>
     <h2>Compiti/Verifiche</h2>
     <p>Ciao!Per avvisarti,alcuni compiti potrebbero mancare,non essere accurati ecc..quindi cerca di verificare prima i dati con i tuoi compagni o dal registro(o semplicente ascolta all insegnante durante la classe).Quindi questo sito deve essere usato per aiutare,NON per sostituire,quindi non incolparmi!Grazie!.</p>
-   <p>Versione 0.7.3</p>
+   <p>Versione 0.7.4</p>
     <div id="lista-compiti">Caricamento in corso...</div>
  
     <script>
     // Questo metodo (percorso relativo) funziona ovunque senza configurare link lunghi!
-    const url = 'compiti.json'; 
+    const url = 'compiti.json?v=' + Date.now(); 
 
     fetch(url)
         .then(response => {
