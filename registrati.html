@@ -27,9 +27,8 @@
     <input type="email" id="email" placeholder="Inserisci la tua email">
     <input type="password" id="password" placeholder="Crea password (min. 6 caratteri)">
     
-    <button onclick="creaAccount()">Registrati</button>
+    <button type="button" id="btn-submit">Registrati</button>
     
-    <!-- Box per i messaggi dello schermo -->
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 
@@ -39,6 +38,7 @@
 </div>
 
 <script type="module">
+    // LINK COMPLETI E AGGIORNATI ALLA VERSIONE SELEZIONATA DI FIREBASE
     import { initializeApp } from "https://gstatic.com";
     import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://gstatic.com";
 
@@ -54,9 +54,10 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    window.creaAccount = function() {
-        const nickname = document.getElementById('nickname').value;
-        const email = document.getElementById('email').value;
+    // Nuovo metodo sicuro per intercettare il clic del pulsante senza blocchi
+    document.getElementById('btn-submit').addEventListener('click', function() {
+        const nickname = document.getElementById('nickname').value.trim();
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
         const successoDiv = document.getElementById('successo');
@@ -64,8 +65,8 @@
         erroreDiv.style.display = "none";
         successoDiv.style.display = "none";
 
-        if (!nickname) {
-            erroreDiv.innerText = "Inserisci un nickname!";
+        if (!nickname || !email || !password) {
+            erroreDiv.innerText = "Tutti i campi sono obbligatori!";
             erroreDiv.style.display = "block";
             return;
         }
@@ -74,13 +75,11 @@
             .then((userCredential) => {
                 updateProfile(userCredential.user, { displayName: nickname })
                     .then(() => {
-                        // REGISTRAZIONE CON SUCCESSO: Mostra il messaggio verde e cambia pagina dopo 2 secondi
-                        successoDiv.innerText = "🎉 Account creato con successo! Ti stiamo portando alla pagina di accesso...";
+                        successoDiv.innerText = "🎉 Account creato! Ti stiamo portando al login...";
                         successoDiv.style.display = "block";
-                        
                         setTimeout(() => {
-                            window.location.href = "login.html"; // Spedisce al Login
-                        }, 2500);
+                            window.location.href = "login.html";
+                        }, 2000);
                     });
             })
             .catch((error) => {
@@ -89,11 +88,13 @@
                     erroreDiv.innerText = "Questa email è già registrata.";
                 } else if (error.code === 'auth/weak-password') {
                     erroreDiv.innerText = "La password deve avere almeno 6 caratteri.";
+                } else if (error.code === 'auth/invalid-email') {
+                    erroreDiv.innerText = "Formato email non valido.";
                 } else {
                     erroreDiv.innerText = "Errore: " + error.message;
                 }
             });
-    }
+    });
 </script>
 
 </body>
