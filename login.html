@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScuolaVVeloce Accedi</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #0056b3; }
+        .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+        .link-cambio { margin-top: 15px; font-size: 0.9em; color: #555; }
+        .link-cambio a { color: #28a745; font-weight: bold; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>Area Bloccata</h2>
+    <p style="color: #666; font-size: 0.9em;">Fai l'accesso per visualizzare i contenuti</p>
+    
+    <input type="email" id="email" placeholder="Inserisci la tua email">
+    <input type="password" id="password" placeholder="Inserisci la password">
+    
+    <button onclick="effettuaLogin()">Accedi</button>
+    <div id="errore" class="error-msg"></div>
+
+    <div class="link-cambio">
+        Non hai un account? <a href="registrati.html">Registrati qui</a>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getAuth, signInWithEmailAndPassword } from "https://gstatic.com";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
+        authDomain: "://firebaseapp.com",
+        projectId: "scuolavveloce",
+        storageBucket: "scuolavveloce.firebasestorage.app",
+        messagingSenderId: "191133215574",
+        appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.effettuaLogin = function() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const erroreDiv = document.getElementById('errore');
+
+        erroreDiv.style.display = "none";
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                localStorage.setItem("utenteLoggato", "true");
+                window.location.href = "index.html"; 
+            })
+            .catch((error) => {
+                erroreDiv.style.display = "block";
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    erroreDiv.innerText = "Email o password errate.";
+                } else {
+                    erroreDiv.innerText = "Errore di acesso. Controlla i dati.";
+                }
+            });
+    }
+</script>
+
+</body>
+</html>
+
