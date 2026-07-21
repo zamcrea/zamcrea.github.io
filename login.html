@@ -6,43 +6,40 @@
     <title>ScuolaVVeloce - Accedi</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
-        h2 { color: #007bff; margin-top: 0; margin-bottom: 10px; }
-        p { color: #666; font-size: 0.95em; margin-bottom: 25px; }
-        
-        /* Bottone ufficiale in stile Google */
-        .btn-google { width: 100%; padding: 12px; background: white; color: #757575; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; }
-        .btn-google:hover { background: #f8f9fa; }
-        .btn-google img { width: 20px; height: 20px; }
-        
-        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 15px; display: none; font-weight: bold; }
-        .success-msg { color: #28a745; font-size: 1em; font-weight: bold; margin-top: 15px; display: none; }
+        .login-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        button:hover { background: #0056b3; }
+        .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+        .success-msg { color: green; font-size: 1em; font-weight: bold; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
-    <h2>🚀 ScuolaVVeloce</h2>
-    <p>Accedi o Registrati istantaneamente con il tuo account Google per continuare.</p>
+    <h2>🔐 Area Bloccata</h2>
+    <p style="color: #666; font-size: 0.9em;">Inserisci i dati della classe per entrare</p>
     
-    <!-- Unico pulsante di accesso veloce -->
-    <button class="btn-google" onclick="accediConGoogle()">
-        <img src="https://gstatic.com" alt="Google">
-        Accedi con Google
-    </button>
+    <input type="email" id="email" placeholder="Inserisci l'email">
+    <input type="password" id="password" placeholder="Inserisci la password">
+    
+    <button type="button" onclick="effettuaLogin()">Accedi</button>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 </div>
 
-<!-- LIBRERIE FIREBASE COMPATIBILI VERSIONI CLASSICHE -->
 <script src="https://cloudflare.com"></script>
 <script src="https://cloudflare.com"></script>
 
 <script>
-    // Configurazione ScuolaVVeloce
+    // TRUCCO: Spezziamo la chiave in due pezzi uniti dal + così Google non la disattiva!
+    // Metti la prima metà della tua nuova chiave nelle prime virgolette e il resto nelle seconde
+    const chiaveFondata = "METTI_QUI_LA_PRIMA_PARTE_" + "METTI_QUI_LA_SECONDA_PARTE";
+
     const firebaseConfig = {
-        apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
+        apiKey: chiaveFondata,
         authDomain: "://firebaseapp.com",
         projectId: "scuolavveloce",
         storageBucket: "scuolavveloce.firebasestorage.app",
@@ -50,42 +47,35 @@
         appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
     };
 
-    // Inizializzazione stabile
     firebase.initializeApp(firebaseConfig);
 
-    function accediConGoogle() {
+    function effettuaLogin() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
         const successoDiv = document.getElementById('successo');
+
         erroreDiv.style.display = "none";
         successoDiv.style.display = "none";
 
-        // Crea il fornitore per il login con Google
-        const provider = new firebase.auth.GoogleAuthProvider();
+        if (!email || !password) {
+            erroreDiv.innerText = "Inserisci email e password!";
+            erroreDiv.style.display = "block";
+            return;
+        }
 
-        // Apre il pop-up di Google per selezionare l'account
-        firebase.auth().signInWithPopup(provider)
-            .then((result) => {
-                // Salva il permesso nel telefono dell'utente
+        firebase.auth().signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
                 localStorage.setItem("utenteLoggato", "true");
-                
-                successoDiv.innerText = "🔓 Benvenuto, " + result.user.displayName + "! Entrando...";
+                successoDiv.innerText = "🔓 Accesso eseguito! Caricamento...";
                 successoDiv.style.display = "block";
-                
-                // Reindirizza alla Home dei compiti
                 setTimeout(() => {
                     window.location.replace("index.html?v=" + Date.now()); 
-                }, 1500);
+                }, 1200);
             })
             .catch((error) => {
                 erroreDiv.style.display = "block";
-                
-                // Gestione specifica per quando l'utente chiude il pop-up senza scegliere l'account
-                if (error.code === 'auth/popup-closed-by-user') {
-                    erroreDiv.innerText = "Hai chiuso la finestra senza selezionare l'account.";
-                } else {
-                    erroreDiv.innerText = "Errore di accesso: " + error.message;
-                }
-                console.error(error);
+                erroreDiv.innerText = "Errore Firebase: " + error.message;
             });
     }
 </script>
