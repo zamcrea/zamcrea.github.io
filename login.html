@@ -12,6 +12,7 @@
         button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
         button:hover { background: #0056b3; }
         .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+        .success-msg { color: green; font-size: 1em; font-weight: bold; margin-top: 10px; display: none; }
         .link-cambio { margin-top: 15px; font-size: 0.9em; color: #555; }
         .link-cambio a { color: #28a745; font-weight: bold; text-decoration: none; }
     </style>
@@ -19,14 +20,17 @@
 <body>
 
 <div class="login-card">
-    <h2>Area Bloccata</h2>
-    <p style="color: #666; font-size: 0.9em;">Fai l'accesso per visualizzare i contenuti</p>
+    <h2>🔐 Area Bloccata</h2>
+    <p style="color: #666; font-size: 0.9em;">Fai l'accesso per vedere i contenuti</p>
     
     <input type="email" id="email" placeholder="Inserisci la tua email">
     <input type="password" id="password" placeholder="Inserisci la password">
     
     <button onclick="effettuaLogin()">Accedi</button>
+    
+    <!-- Box per i messaggi dello schermo -->
     <div id="errore" class="error-msg"></div>
+    <div id="successo" class="success-msg"></div>
 
     <div class="link-cambio">
         Non hai un account? <a href="registrati.html">Registrati qui</a>
@@ -53,20 +57,29 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
+        const successoDiv = document.getElementById('successo');
 
         erroreDiv.style.display = "none";
+        successoDiv.style.display = "none";
 
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 localStorage.setItem("utenteLoggato", "true");
-                window.location.href = "index.html"; 
+                
+                // ACCESSO CON SUCCESSO: Mostra il messaggio verde e va alla Home
+                successoDiv.innerText = "🔓 Accesso eseguito! Caricamento della Home...";
+                successoDiv.style.display = "block";
+                
+                setTimeout(() => {
+                    window.location.href = "index.html"; // Spedisce alla Home dei compiti
+                }, 1500);
             })
             .catch((error) => {
                 erroreDiv.style.display = "block";
                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                     erroreDiv.innerText = "Email o password errate.";
                 } else {
-                    erroreDiv.innerText = "Errore di acesso. Controlla i dati.";
+                    erroreDiv.innerText = "Errore di accesso. Controlla la connessione.";
                 }
             });
     }
@@ -74,4 +87,3 @@
 
 </body>
 </html>
-
