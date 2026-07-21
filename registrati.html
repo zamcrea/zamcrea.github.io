@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScuolaVVeloce Registrati</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .register-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #28a745; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #218838; }
+        .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
+        .link-cambio { margin-top: 15px; font-size: 0.9em; color: #555; }
+        .link-cambio a { color: #007bff; font-weight: bold; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="register-card">
+    <h2>Crea Account</h2>
+    <p style="color: #666; font-size: 0.9em;">Registrati per accedere ai compiti</p>
+    
+    <input type="text" id="nickname" placeholder="Scegli un Nickname divertente">
+    <input type="email" id="email" placeholder="Inserisci la tua email">
+    <input type="password" id="password" placeholder="Crea password (min. 6 caratteri)">
+    
+    <button onclick="creaAccount()">Registrati</button>
+    <div id="errore" class="error-msg"></div>
+
+    <div class="link-cambio">
+        Hai già un account? <a href="login.html">Accedi qui</a>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://gstatic.com";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
+        authDomain: "://firebaseapp.com",
+        projectId: "scuolavveloce",
+        storageBucket: "scuolavveloce.firebasestorage.app",
+        messagingSenderId: "191133215574",
+        appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.creaAccount = function() {
+        const nickname = document.getElementById('nickname').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const erroreDiv = document.getElementById('errore');
+
+        erroreDiv.style.display = "none";
+
+        if (!nickname) {
+            erroreDiv.innerText = "Inserisci un nickname!";
+            erroreDiv.style.display = "block";
+            return;
+        }
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                updateProfile(userCredential.user, { displayName: nickname })
+                    .then(() => {
+                        localStorage.setItem("utenteLoggato", "true");
+                        window.location.href = "index.html"; 
+                    });
+            })
+            .catch((error) => {
+                erroreDiv.style.display = "block";
+                if (error.code === 'auth/email-already-in-use') {
+                    erroreDiv.innerText = "Questa email è già registrata.";
+                } else if (error.code === 'auth/weak-password') {
+                    erroreDiv.innerText = "La password deve avere almeno 6 caratteri.";
+                } else {
+                    erroreDiv.innerText = "Errore durante la registrazione.";
+                }
+            });
+    }
+</script>
+
+</body>
+</html>
