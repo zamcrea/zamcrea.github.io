@@ -3,45 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScuolaVVeloce Registrati</title>
+    <title>ScuolaVVeloce Accedi</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .register-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
-        h2 { color: #28a745; margin-top: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #218838; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #0056b3; }
         .error-msg { color: red; font-size: 0.9em; margin-top: 10px; display: none; }
         .success-msg { color: green; font-size: 1em; font-weight: bold; margin-top: 10px; display: none; }
         .link-cambio { margin-top: 15px; font-size: 0.9em; color: #555; }
-        .link-cambio a { color: #007bff; font-weight: bold; text-decoration: none; }
+        .link-cambio a { color: #28a745; font-weight: bold; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div class="register-card">
-    <h2>📝 Crea Account</h2>
-    <p style="color: #666; font-size: 0.9em;">Registrati per accedere alla chat e ai compiti</p>
+<div class="login-card">
+    <h2>🔐 Area Bloccata</h2>
+    <p style="color: #666; font-size: 0.9em;">Fai l'accesso per vedere i contenuti</p>
     
-    <input type="text" id="nickname" placeholder="Scegli un Nickname">
     <input type="email" id="email" placeholder="Inserisci la tua email">
-    <input type="password" id="password" placeholder="Crea password (min. 6 caratteri)">
+    <input type="password" id="password" placeholder="Inserisci la password">
     
-    <button onclick="creaAccount()">Registrati</button>
+    <button type="button" onclick="effettuaLogin()">Accedi</button>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 
     <div class="link-cambio">
-        Hai già un account? <a href="login.html">Accedi qui</a>
+        Non hai un account? <a href="registrati.html">Registrati qui</a>
     </div>
 </div>
 
-<!-- LIBRERIE FIREBASE COMPATIBILI -->
-<script src="https://gstatic.com"></script>
-<script src="https://gstatic.com"></script>
+<!-- LIBRERIE UNIVERSALI - ABBIAMO TOLTO GSTATIC PER EVITARE I BLOCCHI -->
+<script src="https://cloudflare.com"></script>
+<script src="https://cloudflare.com"></script>
 
 <script>
+    // Configurazione ScuolaVVeloce
     const firebaseConfig = {
         apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
         authDomain: "://firebaseapp.com",
@@ -51,10 +51,10 @@
         appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
     };
 
+    // Inizializzazione stabile
     firebase.initializeApp(firebaseConfig);
 
-    function creaAccount() {
-        const nickname = document.getElementById('nickname').value.trim();
+    function effettuaLogin() {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
@@ -63,34 +63,29 @@
         erroreDiv.style.display = "none";
         successoDiv.style.display = "none";
 
-        if (!nickname || !email || !password) {
-            erroreDiv.innerText = "Tutti i campi sono obbligatori!";
+        if (!email || !password) {
+            erroreDiv.innerText = "Inserisci email e password!";
             erroreDiv.style.display = "block";
             return;
         }
 
-        firebase.auth().createUserWithEmailAndPassword(email, password)
+        firebase.auth().signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                const user = userCredential.user;
-                return user.updateProfile({ displayName: nickname });
-            })
-            .then(() => {
-                successoDiv.innerText = "🎉 Account creato! Ti stiamo portando al login...";
+                localStorage.setItem("utenteLoggato", "true");
+                
+                successoDiv.innerText = "🔓 Accesso eseguito! Caricamento della Home...";
                 successoDiv.style.display = "block";
+                
                 setTimeout(() => {
-                    window.location.href = "login.html";
-                }, 2000);
+                    window.location.replace("index.html?v=" + Date.now()); 
+                }, 1500);
             })
             .catch((error) => {
                 erroreDiv.style.display = "block";
-                if (error.code === 'auth/email-already-in-use') {
-                    erroreDiv.innerText = "Questa email è già registrata.";
-                } else if (error.code === 'auth/weak-password') {
-                    erroreDiv.innerText = "La password deve avere almeno 6 caratteri.";
-                } else if (error.code === 'auth/invalid-email') {
-                    erroreDiv.innerText = "Formato email non valido.";
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    erroreDiv.innerText = "Email o password errate.";
                 } else {
-                    erroreDiv.innerText = "Errore: " + error.message;
+                    erroreDiv.innerText = "Errore di accesso: " + error.message;
                 }
             });
     }
