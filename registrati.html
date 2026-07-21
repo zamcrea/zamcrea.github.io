@@ -27,7 +27,7 @@
     <input type="email" id="email" placeholder="Inserisci la tua email">
     <input type="password" id="password" placeholder="Crea password (min. 6 caratteri)">
     
-    <button type="button" id="btn-submit">Registrati</button>
+    <button onclick="creaAccount()">Registrati</button>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
@@ -37,11 +37,11 @@
     </div>
 </div>
 
-<script type="module">
-    // LINK COMPLETI E AGGIORNATI ALLA VERSIONE SELEZIONATA DI FIREBASE
-    import { initializeApp } from "https://gstatic.com";
-    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://gstatic.com";
+<!-- LIBRERIE FIREBASE COMPATIBILI -->
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
 
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
         authDomain: "://firebaseapp.com",
@@ -51,11 +51,9 @@
         appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    firebase.initializeApp(firebaseConfig);
 
-    // Nuovo metodo sicuro per intercettare il clic del pulsante senza blocchi
-    document.getElementById('btn-submit').addEventListener('click', function() {
+    function creaAccount() {
         const nickname = document.getElementById('nickname').value.trim();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
@@ -71,16 +69,17 @@
             return;
         }
 
-        createUserWithEmailAndPassword(auth, email, password)
+        firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                updateProfile(userCredential.user, { displayName: nickname })
-                    .then(() => {
-                        successoDiv.innerText = "🎉 Account creato! Ti stiamo portando al login...";
-                        successoDiv.style.display = "block";
-                        setTimeout(() => {
-                            window.location.href = "login.html";
-                        }, 2000);
-                    });
+                const user = userCredential.user;
+                return user.updateProfile({ displayName: nickname });
+            })
+            .then(() => {
+                successoDiv.innerText = "🎉 Account creato! Ti stiamo portando al login...";
+                successoDiv.style.display = "block";
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 2000);
             })
             .catch((error) => {
                 erroreDiv.style.display = "block";
@@ -94,7 +93,7 @@
                     erroreDiv.innerText = "Errore: " + error.message;
                 }
             });
-    });
+    }
 </script>
 
 </body>
