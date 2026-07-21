@@ -28,7 +28,6 @@
     
     <button onclick="effettuaLogin()">Accedi</button>
     
-    <!-- Box per i messaggi dello schermo -->
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 
@@ -37,10 +36,11 @@
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://gstatic.com";
-    import { getAuth, signInWithEmailAndPassword } from "https://gstatic.com";
+<!-- LIBRERIE FIREBASE COMPATIBILI -->
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
 
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU",
         authDomain: "://firebaseapp.com",
@@ -50,11 +50,10 @@
         appId: "1:191133215574:web:8dc8a24666ec50421ac4f7"   
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    firebase.initializeApp(firebaseConfig);
 
-    window.effettuaLogin = function() {
-        const email = document.getElementById('email').value;
+    function effettuaLogin() {
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
         const successoDiv = document.getElementById('successo');
@@ -62,16 +61,21 @@
         erroreDiv.style.display = "none";
         successoDiv.style.display = "none";
 
-        signInWithEmailAndPassword(auth, email, password)
+        if (!email || !password) {
+            erroreDiv.innerText = "Inserisci email e password!";
+            erroreDiv.style.display = "block";
+            return;
+        }
+
+        firebase.auth().signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 localStorage.setItem("utenteLoggato", "true");
                 
-                // ACCESSO CON SUCCESSO: Mostra il messaggio verde e va alla Home
                 successoDiv.innerText = "🔓 Accesso eseguito! Caricamento della Home...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(() => {
-                    window.location.href = "index.html"; // Spedisce alla Home dei compiti
+                    window.location.href = "index.html"; 
                 }, 1500);
             })
             .catch((error) => {
@@ -79,7 +83,7 @@
                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                     erroreDiv.innerText = "Email o password errate.";
                 } else {
-                    erroreDiv.innerText = "Errore di accesso. Controlla la connessione.";
+                    erroreDiv.innerText = "Errore di accesso: " + error.message;
                 }
             });
     }
