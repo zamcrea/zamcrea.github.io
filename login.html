@@ -11,11 +11,9 @@
         p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
         
+        /* Grafica dei due bottoni */
         .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-accedi:hover { background: #0056b3; }
-        
         .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-registrati:hover { background: #218838; }
         
         .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
         .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
@@ -26,18 +24,20 @@
 
 <div class="login-card">
     <h2>🔐 ScuolaVVeloce</h2>
-    <p>Usa la tua email personale per entrare</p>
+    <p>Inserisci i dati per accedere o registrarti</p>
     
-    <input type="email" id="email" placeholder="Inserisci la tua Email">
-    <input type="password" id="password" placeholder="Inserisci la Password">
-    
-    <!-- Pulsante Principale per chi ha già l'account -->
-    <button type="button" class="btn-accedi" onclick="gestisciAzione('accedi')">Accedi</button>
-    
-    <div class="divisore">OPPURE SE SEI NUOVO</div>
-    
-    <!-- Pulsante per registrarsi da soli all'istante -->
-    <button type="button" class="btn-registrati" onclick="gestisciAzione('registrati')">Registrati Gratis</button>
+    <!-- STRUTTURA A FORM: Impedisce i blocchi dei bottoni su mobile -->
+    <form id="modulo-scuola">
+        <input type="email" id="email" placeholder="Inserisci la tua Email" required>
+        <input type="password" id="password" placeholder="Inserisci la Password" required>
+        
+        <!-- Pulsante con type="submit" che forza l'attivazione del codice -->
+        <button type="submit" class="btn-accedi" id="btn-login">Accedi</button>
+        
+        <div class="divisore">OPPURE SE SEI NUOVO</div>
+        
+        <button type="button" class="btn-registrati" id="btn-signup">Registrati Gratis</button>
+    </form>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
@@ -45,8 +45,20 @@
 
 <script>
     const apiKey = "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU";
+    const form = document.getElementById('modulo-scuola');
 
-    function gestisciAzione(tipo) {
+    // Mossa furba: intercettiamo l'invio del form intero, non il clic del singolo tasto!
+    form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Blocca il ricaricamento nativo della pagina
+        avviaAutenticazione('accedi');
+    });
+
+    // Gestisce il secondo bottone per chi vuole registrarsi
+    document.getElementById('btn-signup').addEventListener('click', function() {
+        avviaAutenticazione('registrati');
+    });
+
+    function avviaAutenticazione(azione) {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
@@ -56,7 +68,8 @@
         successoDiv.style.display = "none";
 
         if (!email || !password) {
-            erroreDiv.innerText = "Inserisci sia l'email che la password!";
+            erroreDiv.innerText = "Campi obbligatori vuoti!";
+            erroreDiv.style.color = "#dc3545";
             erroreDiv.style.display = "block";
             return;
         }
@@ -65,7 +78,7 @@
             if (data.error) {
                 erroreDiv.style.color = "#dc3545";
                 if (data.error.message === "EMAIL_EXISTS") {
-                    erroreDiv.innerText = "Questa email è già registrata! Clicca su Accedi.";
+                    erroreDiv.innerText = "Email già registrata! Clicca su Accedi.";
                 } else if (data.error.message === "INVALID_PASSWORD" || data.error.message === "EMAIL_NOT_FOUND") {
                     erroreDiv.innerText = "Email o password errate!";
                 } else {
@@ -75,16 +88,14 @@
                 erroreDiv.style.display = "none";
                 localStorage.setItem("utenteLoggato", "true");
                 
-                if (tipo === 'registrati') {
-                    successoDiv.innerText = "🎉 Account creato! Entrando nella Home...";
-                } else {
-                    successoDiv.innerText = "🔓 Accesso eseguito! Caricamento...";
-                }
+                successoDiv.innerText = (azione === 'registrati') 
+                    ? "🎉 Profilo creato! Entrando..." 
+                    : "🔓 Accesso eseguito! Caricamento...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(() => {
                     window.location.replace("index.html?v=" + Date.now());
-                }, 1500);
+                }, 1300);
             }
         })
         .catch(err => {
