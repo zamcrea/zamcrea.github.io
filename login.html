@@ -6,77 +6,91 @@
     <title>ScuolaVVeloce - Accedi</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
-        h2 { color: #007bff; margin-top: 0; margin-bottom: 10px; }
-        p { color: #666; font-size: 0.95em; margin-bottom: 25px; }
+        .login-card { background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
+        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
         
-        /* Bottone ufficiale in stile Google */
-        .btn-google { width: 100%; padding: 12px; background: white; color: #757575; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background 0.2s; width: 100%; }
-        .btn-google:hover { background: #f8f9fa; }
-        .btn-google img { width: 20px; height: 20px; }
+        .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-accedi:hover { background: #0056b3; }
         
-        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 15px; display: none; font-weight: bold; }
-        .success-msg { color: #28a745; font-size: 1em; font-weight: bold; margin-top: 15px; display: none; }
+        .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-registrati:hover { background: #218838; }
+        
+        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
+        .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
+        .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="login-card">
-    <h2>🚀 ScuolaVVeloce</h2>
-    <p>Accedi o Registrati istantaneamente con il tuo account Google per continuare.</p>
+    <h2>🔐 ScuolaVVeloce</h2>
+    <p>Usa la tua email personale per entrare</p>
     
-    <!-- Unico pulsante per l'accesso immediato -->
-    <button class="btn-google" onclick="accediConGoogle()">
-        <img src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js" alt="Google">
-        Accedi con Google
-    </button>
+    <input type="email" id="email" placeholder="Inserisci la tua Email">
+    <input type="password" id="password" placeholder="Inserisci la Password">
+    
+    <!-- Pulsante Principale per chi ha già l'account -->
+    <button type="button" class="btn-accedi" onclick="gestisciAzione('accedi')">Accedi</button>
+    
+    <div class="divisore">OPPURE SE SEI NUOVO</div>
+    
+    <!-- Pulsante per registrarsi da soli all'istante -->
+    <button type="button" class="btn-registrati" onclick="gestisciAzione('registrati')">Registrati Gratis</button>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 </div>
 
-<!-- LIBRERIE FIREBASE COMPATIBILI DA SCRIPT CDN -->
-<script src="https://cloudflare.com"></script>
-<script src="https://cloudflare.com"></script>
-
 <script>
+    const apiKey = "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU";
 
-    const firebaseConfig = {
-    apiKey: "AIzaSyChIqtIITrWPts" + "Gt7t1GDpsiGjDCtVOnBU",
-    authDomain: "scuolavveloce.firebaseapp.com",
-    projectId: "scuolavveloce",
-    storageBucket: "scuolavveloce.firebasestorage.app",
-    messagingSenderId: "191133215574",
-    appId: "1:191133215574:web:c35d117c9158bdad1ac4f7"
-    };
+    function gestisciAzione(tipo) {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const erroreDiv = document.getElementById('errore');
+        const successoDiv = document.getElementById('successo');
 
-    firebase.initializeApp(firebaseConfig);
+        erroreDiv.style.display = "none";
+        successoDiv.style.display = "none";
 
-    // CONTROLLA SE SIAMO APPENA TORNATI DALLA SCHERMATA DI LOGIN DI GOOGLE
-    firebase.auth().getRedirectResult()
-        .then((result) => {
-            if (result.user) {
+        if (!email || !password) {
+            erroreDiv.innerText = "Inserisci sia l'email che la password!";
+            erroreDiv.style.display = "block";
+            return;
+        }
+        if (password.length  response.json())
+        .then(data => {
+            if (data.error) {
+                erroreDiv.style.color = "#dc3545";
+                if (data.error.message === "EMAIL_EXISTS") {
+                    erroreDiv.innerText = "Questa email è già registrata! Clicca su Accedi.";
+                } else if (data.error.message === "INVALID_PASSWORD" || data.error.message === "EMAIL_NOT_FOUND") {
+                    erroreDiv.innerText = "Email o password errate!";
+                } else {
+                    erroreDiv.innerText = "Errore: " + data.error.message;
+                }
+            } else {
+                erroreDiv.style.display = "none";
                 localStorage.setItem("utenteLoggato", "true");
                 
-                document.getElementById('successo').innerText = "🔓 Benvenuto, " + result.user.displayName + "! Entrando...";
-                document.getElementById('successo').style.display = "block";
+                if (tipo === 'registrati') {
+                    successoDiv.innerText = "🎉 Account creato! Entrando nella Home...";
+                } else {
+                    successoDiv.innerText = "🔓 Accesso eseguito! Caricamento...";
+                }
+                successoDiv.style.display = "block";
                 
                 setTimeout(() => {
-                    window.location.replace("index.html?v=" + Date.now()); 
+                    window.location.replace("index.html?v=" + Date.now());
                 }, 1500);
             }
         })
-        .catch((error) => {
-            document.getElementById('errore').style.display = "block";
-            document.getElementById('errore').innerText = "Errore di risposta Google: " + error.message;
-            console.error(error);
+        .catch(err => {
+            erroreDiv.style.color = "#dc3545";
+            erroreDiv.innerText = "Errore di connessione.";
         });
-
-    function accediConGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // USA REDIRECT: Cambia l'intera schermata senza finestre pop-up bloccate da Apple/Android
-        firebase.auth().signInWithRedirect(provider);
     }
 </script>
 
