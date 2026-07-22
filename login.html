@@ -3,107 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScuolaVVeloce - Accedi</title>
+    <title>Test Reindirizzamento</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
-        h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
-        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
-        
-        /* Grafica dei due bottoni */
-        .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
-        .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
-        .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
+        body { font-family: Arial, sans-serif; text-align: center; padding-top: 100px; background: #f0f2f5; }
+        .box { background: white; padding: 40px; display: inline-block; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        button { padding: 15px 30px; font-size: 1.2em; font-weight: bold; color: white; background: #28a745; border: none; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>🔐 ScuolaVVeloce</h2>
-    <p>Inserisci i dati per accedere o registrarti</p>
+<div class="box">
+    <h2>🔗 Test Salto Pagina</h2>
+    <p>Clicca il pulsante verde qui sotto.</p>
     
-    <!-- STRUTTURA A FORM: Impedisce i blocchi dei bottoni su mobile -->
-    <form id="modulo-scuola">
-        <input type="email" id="email" placeholder="Inserisci la tua Email" required>
-        <input type="password" id="password" placeholder="Inserisci la Password" required>
-        
-        <!-- Pulsante con type="submit" che forza l'attivazione del codice -->
-        <button type="submit" class="btn-accedi" id="btn-login">Accedi</button>
-        
-        <div class="divisore">OPPURE SE SEI NUOVO</div>
-        
-        <button type="button" class="btn-registrati" id="btn-signup">Registrati Gratis</button>
-    </form>
-    
-    <div id="errore" class="error-msg"></div>
-    <div id="successo" class="success-msg"></div>
+    <!-- Questo comando dice al browser di cambiare subito indirizzo senza chiedere permessi -->
+    <button onclick="window.location.href = 'https://google.com';">Vai a Google.com</button>
 </div>
-
-<script>
-    const apiKey = "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU";
-    const form = document.getElementById('modulo-scuola');
-
-    // Mossa furba: intercettiamo l'invio del form intero, non il clic del singolo tasto!
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // Blocca il ricaricamento nativo della pagina
-        avviaAutenticazione('accedi');
-    });
-
-    // Gestisce il secondo bottone per chi vuole registrarsi
-    document.getElementById('btn-signup').addEventListener('click', function() {
-        avviaAutenticazione('registrati');
-    });
-
-    function avviaAutenticazione(azione) {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const erroreDiv = document.getElementById('errore');
-        const successoDiv = document.getElementById('successo');
-
-        erroreDiv.style.display = "none";
-        successoDiv.style.display = "none";
-
-        if (!email || !password) {
-            erroreDiv.innerText = "Campi obbligatori vuoti!";
-            erroreDiv.style.color = "#dc3545";
-            erroreDiv.style.display = "block";
-            return;
-        }
-        if (password.length  response.json())
-        .then(data => {
-            if (data.error) {
-                erroreDiv.style.color = "#dc3545";
-                if (data.error.message === "EMAIL_EXISTS") {
-                    erroreDiv.innerText = "Email già registrata! Clicca su Accedi.";
-                } else if (data.error.message === "INVALID_PASSWORD" || data.error.message === "EMAIL_NOT_FOUND") {
-                    erroreDiv.innerText = "Email o password errate!";
-                } else {
-                    erroreDiv.innerText = "Errore: " + data.error.message;
-                }
-            } else {
-                erroreDiv.style.display = "none";
-                localStorage.setItem("utenteLoggato", "true");
-                
-                successoDiv.innerText = (azione === 'registrati') 
-                    ? "🎉 Profilo creato! Entrando..." 
-                    : "🔓 Accesso eseguito! Caricamento...";
-                successoDiv.style.display = "block";
-                
-                setTimeout(() => {
-                    window.location.replace("index.html?v=" + Date.now());
-                }, 1300);
-            }
-        })
-        .catch(err => {
-            erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "Errore di connessione.";
-        });
-    }
-</script>
 
 </body>
 </html>
