@@ -20,15 +20,15 @@
 <body>
 
 <div class="login-card">
-    <h2>🔐 ScuolaVVeloce</h2>
-    <p>Usa la tua email personale per continuare</p>
+    <h2>ScuolaVVeloce</h2>
+    <p>Usa la tua email per continuare</p>
     
     <input type="text" id="nickname" placeholder="Nickname (solo per registrazione)">
     <input type="email" id="email" placeholder="Inserisci la tua Email">
     <input type="password" id="password" placeholder="Inserisci la Password">
     
     <button type="button" class="btn-accedi" onclick="inviaDatiAppwrite('accedi')">Accedi</button>
-    <div class="divisore">OPPURE SE SEI NUOVO</div>
+    <div class="divisore">Oppure se non hai creato un account,crealo adesso!</div>
     <button type="button" class="btn-registrati" onclick="inviaDatiAppwrite('registrati')">Registrati Gratis</button>
     
     <div id="errore" class="error-msg"></div>
@@ -56,13 +56,13 @@
             return;
         }
 
-        erroreDiv.innerText = "Invio dati sicuri ad Appwrite Cloud...";
+        erroreDiv.innerText = "Invio dati verso il server...";
         erroreDiv.style.color = "#666";
         erroreDiv.style.display = "block";
 
         if (azione === 'registrati') {
             if (!nickname) {
-                erroreDiv.innerText = "Scegli un Nickname per registrarti!";
+                erroreDiv.innerText = "Scegli un Nickname per entrare a far parte di questa comunita!";
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.style.display = "block";
                 return;
@@ -100,7 +100,7 @@
             })
             .catch(() => {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Il server non risponde alla registrazione.";
+                erroreDiv.innerText = "oh uh! il server non risponde alla registrazione.";
             });
 
         } else if (azione === 'accedi') {
@@ -131,7 +131,7 @@
                 localStorage.setItem("utenteLoggato", "true");
                 erroreDiv.style.display = "none";
                 
-                successoDiv.innerText = "🔓 Accesso confermato! Entrando...";
+                successoDiv.innerText = " Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(function() {
@@ -141,7 +141,7 @@
         })
         .catch(() => {
             erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "Errore di rete durante il login.";
+            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
         });
     }
 </script>
