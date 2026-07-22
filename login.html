@@ -1,3 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScuolaVVeloce - Accedi</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
+        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
+        .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
+        .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>🔐 ScuolaVVeloce</h2>
+    <p>Usa la tua email personale per continuare</p>
+    
+    <input type="text" id="nickname" placeholder="Nickname (solo per registrazione)">
+    <input type="email" id="email" placeholder="Inserisci la tua Email">
+    <input type="password" id="password" placeholder="Inserisci la Password">
+    
+    <button type="button" class="btn-accedi" onclick="inviaDatiAppwrite('accedi')">Accedi</button>
+    <div class="divisore">OPPURE SE SEI NUOVO</div>
+    <button type="button" class="btn-registrati" onclick="inviaDatiAppwrite('registrati')">Registrati Gratis</button>
+    
+    <div id="errore" class="error-msg"></div>
+    <div id="successo" class="success-msg"></div>
+</div>
+
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
@@ -19,7 +56,7 @@
             return;
         }
 
-        erroreDiv.innerText = "Invio dati al server...";
+        erroreDiv.innerText = "Invio dati sicuri ad Appwrite Cloud...";
         erroreDiv.style.color = "#666";
         erroreDiv.style.display = "block";
 
@@ -40,8 +77,16 @@
             fetch(ENDPOINT + "/account", {
                 method: "POST",
                 mode: "cors",
-                headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-                body: JSON.stringify({ userId: "unique()", email: email, password: password, name: nickname })
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    userId: "unique()",
+                    email: email,
+                    password: password,
+                    name: nickname
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -49,27 +94,33 @@
                     erroreDiv.style.color = "#dc3545";
                     erroreDiv.innerText = "Errore: " + data.message;
                 } else {
-                    // Salva il nome inserito temporaneamente prima di loggare
+                    // Registrazione OK: Salva il nome e lancia il login automatico
                     localStorage.setItem("utenteNickname", nickname);
-                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv, nickname);
                 }
             })
             .catch(() => {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Il server non risponde..fail.";
+                erroreDiv.innerText = "Il server non risponde alla registrazione.";
             });
 
         } else if (azione === 'accedi') {
-            eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+            eseguiSessioneLogin(email, password, erroreDiv, successoDiv, null);
         }
     }
 
-    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv, nicknameFornito) {
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
             mode: "cors",
-            headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-            body: JSON.stringify({ email: email, password: password })
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
         })
         .then(res => res.json())
         .then(data => {
@@ -77,15 +128,20 @@
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.innerText = "Dati errati o utente non trovato.";
             } else {
-                // Se entriamo via Login classico, prendiamo il nome registrato nel server cloud
                 localStorage.setItem("utenteLoggato", "true");
                 
-                // Se non abbiamo ancora salvato il nome locale, usa la mail come nome di riserva
-                const nomeDaSalvare = data.userName || email.split('@')[0];
-                localStorage.setItem("utenteNickname", nomeDaSalvare);
-                
+                // Se abbiamo fatto la registrazione passiamo il nickname appena scelto
+                if (nicknameFornito) {
+                    localStorage.setItem("utenteNickname", nicknameFornito);
+                } else {
+                    // Altrimenti estrariamo il nome memorizzato nel server cloud di Appwrite
+                    // Se non è impostato, usa la prima parte della mail prima della chiocciola @
+                    const nomeTrovato = data.userName || email.split('@')[0];
+                    localStorage.setItem("utenteNickname", nomeTrovato);
+                }
+
                 erroreDiv.style.display = "none";
-                successoDiv.innerText = " Accesso confermato! Entrando...";
+                successoDiv.innerText = "🔓 Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(function() {
@@ -99,3 +155,6 @@
         });
     }
 </script>
+
+</body>
+</html>
