@@ -10,10 +10,8 @@
         h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
         p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
-        
         .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
         .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
         .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
         .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
@@ -28,7 +26,6 @@
     <input type="email" id="email" placeholder="Inserisci la tua Email">
     <input type="password" id="password" placeholder="Inserisci la Password">
     
-    <!-- Struttura dei pulsanti identica al test di Google che ha funzionato! -->
     <button type="button" class="btn-accedi" onclick="inviaRichiesta('accedi')">Accedi</button>
     
     <div class="divisore">OPPURE SE SEI NUOVO</div>
@@ -39,60 +36,8 @@
     <div id="successo" class="success-msg"></div>
 </div>
 
-<script>
-    // Chiave ufficiale ScuolaVVeloce
-    const apiKey = "AIzaSyChIqtIITrWPtsGt7t1GDpsiGjDCtVOnBU";
-
-    function inviaRichiesta(tipo) {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const erroreDiv = document.getElementById('errore');
-        const successoDiv = document.getElementById('successo');
-
-        erroreDiv.style.display = "none";
-        successoDiv.style.display = "none";
-
-        // 1. Controllo dei campi vuoti direttamente a schermo
-        if (!email || !password) {
-            erroreDiv.innerText = "Inserisci sia l'email che la password!";
-            erroreDiv.style.color = "#dc3545";
-            erroreDiv.style.display = "block";
-            return;
-        }
-        if (password.length  response.json())
-        .then(data => {
-            if (data.error) {
-                erroreDiv.style.color = "#dc3545";
-                if (data.error.message === "EMAIL_EXISTS") {
-                    erroreDiv.innerText = "Questa email esiste già! Clicca su Accedi.";
-                } else if (data.error.message === "INVALID_PASSWORD" || data.error.message === "EMAIL_NOT_FOUND") {
-                    erroreDiv.innerText = "Email o password errate!";
-                } else {
-                    erroreDiv.innerText = "Errore: " + data.error.message;
-                }
-            } else {
-                erroreDiv.style.display = "none";
-                localStorage.setItem("utenteLoggato", "true");
-                
-                if (tipo === 'registrati') {
-                    successoDiv.innerText = "🎉 Account registrato! Entrando nella Home...";
-                } else {
-                    successoDiv.innerText = "🔓 Accesso eseguito! Caricamento...";
-                }
-                successoDiv.style.display = "block";
-                
-                // Salto pagina identico al test di Google.com
-                setTimeout(() => {
-                    window.location.replace("index.html?v=" + Date.now());
-                }, 1300);
-            }
-        })
-        .catch(err => {
-            erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "Errore di rete. Controlla la connessione.";
-        });
-    }
-</script>
+<!-- RICHIESTA DEL FILE JAVASCRIPT UNICO -->
+<script src="login.js"></script>
 
 </body>
 </html>
