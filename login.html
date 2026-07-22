@@ -37,8 +37,7 @@
 
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    // Forziamo l'indirizzo IP globale alternativo per non perderci nei blocchi DNS dell'iPad
-    const ENDPOINT = "https://fra.appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 
     function inviaDatiAppwrite(azione) {
         const nickname = document.getElementById('nickname').value.trim();
@@ -57,7 +56,7 @@
             return;
         }
 
-        erroreDiv.innerText = "Inviando richiesta sicura (JWT)...";
+        erroreDiv.innerText = "Invio dati sicuri ad Appwrite Cloud...";
         erroreDiv.style.color = "#666";
         erroreDiv.style.display = "block";
 
@@ -75,10 +74,20 @@
                 return;
             }
 
+            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
             fetch(ENDPOINT + "/account", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-                body: JSON.stringify({ userId: "unique()", email: email, password: password, name: nickname })
+                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    userId: "unique()",
+                    email: email,
+                    password: password,
+                    name: nickname
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -91,7 +100,7 @@
             })
             .catch(() => {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Il server Appwrite non risponde.";
+                erroreDiv.innerText = "Il server non risponde alla registrazione.";
             });
 
         } else if (azione === 'accedi') {
@@ -100,43 +109,39 @@
     }
 
     function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
-        // METODO AD INVII TOKEN: Crea la sessione bypassando interamente i Cookie e il SameSite!
+        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-            body: JSON.stringify({ email: email, password: password })
+            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
         })
         .then(res => res.json())
         .then(data => {
             if (data.code && data.code >= 400) {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Credenziali errate o inesistenti.";
+                erroreDiv.innerText = "Dati errati o utente non trovato.";
             } else {
-                // Generiamo un Gettone (JWT) di testo puro per autenticare l'utente senza cookie
-                fetch(ENDPOINT + "/account/jwt", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID, "X-Appwrite-Session": data.$id }
-                })
-                .then(jwtRes => jwtRes.json())
-                .then(jwtData => {
-                    erroreDiv.style.display = "none";
-                    
-                    // Salviamo il gettone e lo stato nella memoria interna a prova di blocco Apple
-                    localStorage.setItem("utenteLoggato", "true");
-                    localStorage.setItem("appwriteJWT", jwtData.jwt);
-                    
-                    successoDiv.innerText = "🔓 Connessione completata! Entrando...";
-                    successoDiv.style.display = "block";
-                    
-                    setTimeout(function() {
-                        window.location.replace("index.html?v=" + Date.now());
-                    }, 1200);
-                });
+                localStorage.setItem("utenteLoggato", "true");
+                erroreDiv.style.display = "none";
+                
+                successoDiv.innerText = "🔓 Accesso confermato! Entrando...";
+                successoDiv.style.display = "block";
+                
+                setTimeout(function() {
+                    window.location.replace("index.html?v=" + Date.now());
+                }, 1200);
             }
         })
         .catch(() => {
             erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "Errore di connessione di rete.";
+            erroreDiv.innerText = "Errore di rete durante il login.";
         });
     }
 </script>
