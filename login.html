@@ -20,7 +20,7 @@
 <body>
 
 <div class="login-card">
-    <h2>🔐 ScuolaVVeloce</h2>
+    <h2>ScuolaVVeloce</h2>
     <p>Usa la tua email personale per continuare</p>
     
     <input type="text" id="nickname" placeholder="Nickname (solo per registrazione)">
@@ -28,7 +28,7 @@
     <input type="password" id="password" placeholder="Inserisci la Password">
     
     <button type="button" class="btn-accedi" onclick="inviaDatiAppwrite('accedi')">Accedi</button>
-    <div class="divisore">OPPURE SE SEI NUOVO</div>
+    <div class="divisore">Oppure se non ti sei ancora registrato..</div>
     <button type="button" class="btn-registrati" onclick="inviaDatiAppwrite('registrati')">Registrati Gratis</button>
     
     <div id="errore" class="error-msg"></div>
@@ -56,7 +56,7 @@
             return;
         }
 
-        erroreDiv.innerText = "Invio dati sicuri ad Appwrite Cloud...";
+        erroreDiv.innerText = "Invio dati al server...";
         erroreDiv.style.color = "#666";
         erroreDiv.style.display = "block";
 
@@ -79,7 +79,9 @@
                 mode: "cors",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-Appwrite-Project": PROJECT_ID
+                    "X-Appwrite-Project": PROJECT_ID,
+                    "X-SDK-Name": "Web",
+                    "X-SDK-Version": "14.0.0"
                 },
                 body: JSON.stringify({
                     userId: "unique()",
@@ -94,7 +96,6 @@
                     erroreDiv.style.color = "#dc3545";
                     erroreDiv.innerText = "Errore: " + data.message;
                 } else {
-                    // Registrazione OK: Salva il nome e lancia il login automatico
                     localStorage.setItem("utenteNickname", nickname);
                     eseguiSessioneLogin(email, password, erroreDiv, successoDiv, nickname);
                 }
@@ -115,7 +116,9 @@
             mode: "cors",
             headers: {
                 "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
             },
             body: JSON.stringify({
                 email: email,
@@ -130,18 +133,15 @@
             } else {
                 localStorage.setItem("utenteLoggato", "true");
                 
-                // Se abbiamo fatto la registrazione passiamo il nickname appena scelto
                 if (nicknameFornito) {
                     localStorage.setItem("utenteNickname", nicknameFornito);
                 } else {
-                    // Altrimenti estrariamo il nome memorizzato nel server cloud di Appwrite
-                    // Se non è impostato, usa la prima parte della mail prima della chiocciola @
                     const nomeTrovato = data.userName || email.split('@')[0];
                     localStorage.setItem("utenteNickname", nomeTrovato);
                 }
 
                 erroreDiv.style.display = "none";
-                successoDiv.innerText = "🔓 Accesso confermato! Entrando...";
+                successoDiv.innerText = "Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(function() {
