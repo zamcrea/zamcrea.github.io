@@ -1,3 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScuolaVVeloce - Accedi</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
+        h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
+        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
+        .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
+        .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h2>🔐 ScuolaVVeloce</h2>
+    <p>Usa la tua email personale per continuare</p>
+    
+    <input type="text" id="nickname" placeholder="Nickname (solo per registrazione)">
+    <input type="email" id="email" placeholder="Inserisci la tua Email">
+    <input type="password" id="password" placeholder="Inserisci la Password">
+    
+    <button type="button" class="btn-accedi" onclick="gestisciAppwrite('accedi')">Accedi</button>
+    <div class="divisore">OPPURE SE SEI NUOVO</div>
+    <button type="button" class="btn-registrati" onclick="gestisciAppwrite('registrati')">Registrati Gratis</button>
+    
+    <div id="errore" class="error-msg"></div>
+    <div id="successo" class="success-msg"></div>
+</div>
+
 <script src="https://jsdelivr.net"></script>
 
 <script>
@@ -20,7 +57,6 @@
 
         if (!email || !password) {
             erroreDiv.innerText = "Inserisci email e password!";
-            erroreDiv.style.color = "#dc3545";
             erroreDiv.style.display = "block";
             return;
         }
@@ -44,36 +80,37 @@
             }
 
             account.create('unique()', email, password, nickname)
-                .then(() => {
+                .then(function() {
                     return account.createEmailPasswordSession(email, password);
                 })
-                .then(() => {
+                .then(function() {
                     localStorage.setItem("utenteLoggato", "true");
                     erroreDiv.style.display = "none";
                     successoDiv.innerText = "🎉 Profilo creato! Entrando...";
                     successoDiv.style.display = "block";
-                    setTimeout(() => { window.location.replace("index.html"); }, 1200);
+                    setTimeout(function() { window.location.replace("index.html"); }, 1200);
                 })
-                .catch(error => {
+                .catch(function(error) {
                     erroreDiv.style.color = "#dc3545";
-                    // Questo mostra l'errore reale inviato da Appwrite
                     erroreDiv.innerText = "Errore: " + error.message; 
                 });
 
         } else if (azione === 'accedi') {
             account.createEmailPasswordSession(email, password)
-                .then(() => {
+                .then(function() {
                     localStorage.setItem("utenteLoggato", "true");
                     erroreDiv.style.display = "none";
                     successoDiv.innerText = "🔓 Accesso eseguito! Caricamento...";
                     successoDiv.style.display = "block";
-                    setTimeout(() => { window.location.replace("index.html"); }, 1200);
+                    setTimeout(function() { window.location.replace("index.html"); }, 1200);
                 })
-                .catch(error => {
+                .catch(function(error) {
                     erroreDiv.style.color = "#dc3545";
-                    // Mostra se la password è errata o se il dominio è bloccato
-                    erroreDiv.innerText = "Errore Accesso: " + error.message;
+                    erroreDiv.innerText = "Errore: " + error.message;
                 });
         }
     }
 </script>
+
+</body>
+</html>
