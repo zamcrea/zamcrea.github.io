@@ -61,14 +61,24 @@
             `;
             console.error(error);
         });
-</script>
-   
 <script>
-    // Non sono cosi ingenuo,penso...
+    // 1. Prima di tutto il controllo: se non è loggato, rimbalza subito!
     if (localStorage.getItem("utenteLoggato") !== "true") {
         window.location.replace("login.html");
     }
 </script>
+
+<!-- 2. Il badge grafico posizionato in alto a destra -->
+<div id="badge-utente" style="position: absolute; top: 15px; right: 15px; background: #ffffff; padding: 8px 14px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-family: Arial, sans-serif; font-size: 0.9em; font-weight: bold; color: #333; display: flex; align-items: center; gap: 6px; z-index: 9999;">
+    👤 <span id="nome-utente-stampa">Caricamento...</span>
+</div>
+ 
+<script>
+    // 3. Ora che il badge esiste nello schermo, ci stampiamo dentro il nome
+    const nicknameSalvato = localStorage.getItem("utenteNickname") || "Studente";
+    document.getElementById("nome-utente-stampa").innerText = nicknameSalvato;
+</script>
+
 
     <a href="Orario.html" style="display: block; text-align: center; padding: 12px; background-color: #c9d9f0; color:  white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Guarda a che ore sono presenti i tuoi fantastici prof</a>
 
