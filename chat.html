@@ -43,8 +43,23 @@
     let nicknameCorrente = "Studente";
 
         // RECUPERA IL NOME: Prova prima sul server, poi nella memoria
-    function recuperaProfiloServer() {
+        function recuperaProfiloServer() {
         const jwtToken = localStorage.getItem("appwriteJWT");
+
+        // 1. Rileva in automatico il tipo di dispositivo
+        let nomeDispositivo = "Dispositivo PC";
+        const stringaBrowser = navigator.userAgent.toLowerCase();
+        
+        if (stringaBrowser.includes("ipad")) {
+            nomeDispositivo = "iPad";
+        } else if (stringaBrowser.includes("iphone")) {
+            nomeDispositivo = "iPhone";
+        } else if (stringaBrowser.includes("android")) {
+            nomeDispositivo = "Android";
+        } else if (stringaBrowser.includes("macintosh")) {
+            nomeDispositivo = "Mac";
+        }
+
         let intestazioni = {
             "X-Appwrite-Project": PROJECT_ID,
             "X-SDK-Name": "Web",
@@ -59,27 +74,19 @@
         })
         .then(res => res.json())
         .then(user => {
-            
+            // 2. Se il cloud risponde con un nome reale, usa quello!
             if (user && user.name && user.name.trim() !== "") {
                 nicknameCorrente = user.name;
             } else {
-                // 2. Se il server non risponde, controlla se c'è un nome nella memoria del dispositivo
-                // Se non c'è nulla, genera un nome unico di test (es: Samsug)
-                let nomeLocale = localStorage.getItem("utenteNickname");
-                if (!nomeLocale) {
-                    nomeLocale = "iPad_" + Math.floor(Math.random() * 100);
-                    localStorage.setItem("utenteNickname", nomeLocale);
-                }
-                nicknameCorrente = nomeLocale;
+                // 3. RISERVA: Se il server è vuoto, assegna il nome del dispositivo
+                nicknameCorrente = nomeDispositivo;
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         })
         .catch(() => {
-            // 3. Gestione di riserva se manca internet o salta la rete
-            let nomeLocale = localStorage.getItem("utenteNickname") || "Studente_" + Math.floor(Math.random() * 100);
-            localStorage.setItem("utenteNickname", nomeLocale);
-            nicknameCorrente = nomeLocale;
+            // 4. RISERVA ANCHE SE SALTA LA RETE
+            nicknameCorrente = nomeDispositivo;
             document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         });
