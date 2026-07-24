@@ -36,14 +36,14 @@
 
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
 
     let nicknameCorrente = "Studente";
 
     function recuperaProfiloServer() {
-        // Recuperiamo il gettone JWT salvato dal login per fargli superare i blocchi Apple
+        
         const jwtToken = localStorage.getItem("appwriteJWT");
 
         let intestazioni = {
@@ -52,7 +52,7 @@
             "X-SDK-Version": "14.0.0"
         };
 
-        // Se il gettone esiste, lo inseriamo nella richiesta per farci riconoscere da Appwrite
+        
         if (jwtToken) {
             intestazioni["X-Appwrite-JWT"] = jwtToken;
         }
@@ -145,7 +145,7 @@
             campo.value = ""; 
             caricaMessaggi(); 
         })
-        .catch(err => alert("Errore di invio. Controlla i permessi su Appwrite."));
+        .catch(err => alert("Errore di invio. Sembra che qualcuno abbia toccato qualcosa di sbagliato!Blame Kernel."));
     }
 
     function controllaInvio(e) {
