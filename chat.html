@@ -42,20 +42,15 @@
 
     let nicknameCorrente = "Studente";
 
+        // RECUPERA IL NOME: Prova prima sul server, poi nella memoria
     function recuperaProfiloServer() {
-        
         const jwtToken = localStorage.getItem("appwriteJWT");
-
         let intestazioni = {
             "X-Appwrite-Project": PROJECT_ID,
             "X-SDK-Name": "Web",
             "X-SDK-Version": "14.0.0"
         };
-
-        
-        if (jwtToken) {
-            intestazioni["X-Appwrite-JWT"] = jwtToken;
-        }
+        if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
 
         fetch(`${ENDPOINT}/account`, {
             method: "GET",
@@ -64,20 +59,32 @@
         })
         .then(res => res.json())
         .then(user => {
-            // Se Appwrite convalida il gettone, estrae il tuo vero nickname
-            if (user && user.name) {
+            
+            if (user && user.name && user.name.trim() !== "") {
                 nicknameCorrente = user.name;
-                document.getElementById("nome-badge").innerText = nicknameCorrente;
             } else {
-                document.getElementById("nome-badge").innerText = "Utente Anonimo";
+                // 2. Se il server non risponde, controlla se c'è un nome nella memoria del dispositivo
+                // Se non c'è nulla, genera un nome unico di test (es: Samsug)
+                let nomeLocale = localStorage.getItem("utenteNickname");
+                if (!nomeLocale) {
+                    nomeLocale = "iPad_" + Math.floor(Math.random() * 100);
+                    localStorage.setItem("utenteNickname", nomeLocale);
+                }
+                nicknameCorrente = nomeLocale;
             }
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         })
         .catch(() => {
-            document.getElementById("nome-badge").innerText = "Ospite offline";
+            // 3. Gestione di riserva se manca internet o salta la rete
+            let nomeLocale = localStorage.getItem("utenteNickname") || "Studente_" + Math.floor(Math.random() * 100);
+            localStorage.setItem("utenteNickname", nomeLocale);
+            nicknameCorrente = nomeLocale;
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         });
     }
+
 
     function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
@@ -156,6 +163,13 @@
 
     recuperaProfiloServer();
     setInterval(caricaMessaggi, 3000);
+</script>
+
+<script>
+    // nuh uh not so fast
+    if (localStorage.getItem("utenteLoggato") !== "true") {
+        window.location.replace("login.html");
+    }
 </script>
 
 
