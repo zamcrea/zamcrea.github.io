@@ -38,38 +38,47 @@
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
-    const COLLECTION_ID = "6a6359510025ce3b3c9a"; 
+    const COLLECTION_ID = "messages"; 
 
     let nicknameCorrente = "Studente";
 
-    
     function recuperaProfiloServer() {
+        // Recuperiamo il gettone JWT salvato dal login per fargli superare i blocchi Apple
+        const jwtToken = localStorage.getItem("appwriteJWT");
+
+        let intestazioni = {
+            "X-Appwrite-Project": PROJECT_ID,
+            "X-SDK-Name": "Web",
+            "X-SDK-Version": "14.0.0"
+        };
+
+        // Se il gettone esiste, lo inseriamo nella richiesta per farci riconoscere da Appwrite
+        if (jwtToken) {
+            intestazioni["X-Appwrite-JWT"] = jwtToken;
+        }
+
         fetch(`${ENDPOINT}/account`, {
             method: "GET",
             mode: "cors",
-            headers: {
-                "X-Appwrite-Project": PROJECT_ID,
-                "X-SDK-Name": "Web",
-                "X-SDK-Version": "14.0.0"
-            }
+            headers: intestazioni
         })
         .then(res => res.json())
         .then(user => {
+            // Se Appwrite convalida il gettone, estrae il tuo vero nickname
             if (user && user.name) {
                 nicknameCorrente = user.name;
                 document.getElementById("nome-badge").innerText = nicknameCorrente;
+            } else {
+                document.getElementById("nome-badge").innerText = "Utente Anonimo";
             }
-            // Avvia il caricamento dei messaggi solo dopo aver capito chi siamo
             caricaMessaggi();
         })
         .catch(() => {
-            // Se non si è loggati o c'è un blocco, carica comunque i messaggi come anonimo
-            document.getElementById("nome-badge").innerText = "Ospite";
+            document.getElementById("nome-badge").innerText = "Ospite offline";
             caricaMessaggi();
         });
     }
 
-    // SCARICA I MESSAGGI E IDENTIFICA L'AUTORE
     function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
             method: "GET",
@@ -88,8 +97,6 @@
             if (data.documents) {
                 data.documents.forEach(doc => {
                     const div = document.createElement("div");
-                    
-                    // Controlla se il mittente del messaggio salvato nel database coincide con l'utente corrente
                     const tipoClasse = (doc.autore === nicknameCorrente) ? "messaggio inviato" : "messaggio ricevuto";
                     div.className = tipoClasse;
 
@@ -109,7 +116,6 @@
         .catch(err => console.error("Errore lettura messaggi:", err));
     }
 
-    
     function inviaMessaggio() {
         const campo = document.getElementById("campo-messaggio");
         const testoMessaggio = campo.value.trim();
@@ -129,7 +135,7 @@
                 documentId: "unique()",
                 data: {
                     testo: testoMessaggio,
-                    autore: nicknameCorrente, // Nome ufficiale cloud, zero localStorage!
+                    autore: nicknameCorrente, 
                     ora: Date.now() 
                 }
             })
@@ -139,7 +145,7 @@
             campo.value = ""; 
             caricaMessaggi(); 
         })
-        .catch(err => alert("Errore di invio: controlla i permessi della collezione."));
+        .catch(err => alert("Errore di invio. Controlla i permessi su Appwrite."));
     }
 
     function controllaInvio(e) {
@@ -148,12 +154,10 @@
         }
     }
 
-    // Parte scaricando prima i dati dell'account e poi la chat
     recuperaProfiloServer();
-    
-    // Aggiorna la stanza ogni 3 secondi
     setInterval(caricaMessaggi, 3000);
 </script>
+
 
 </body>
 </html>
