@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VVChat</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        .chat-header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
+        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #e5ddd5; }
+        .messaggio { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 0.95em; line-height: 1.4; word-wrap: break-word; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+        .inviato { background: #d9fdd3; align-self: flex-end; color: #303030; }
+        .ricevuto { background: #ffffff; align-self: flex-start; color: #303030; }
+        .autore { font-size: 0.75em; font-weight: bold; color: #128c7e; margin-bottom: 3px; display: block; }
+        .orario { font-size: 0.65em; color: #666; float: right; margin-top: 5px; margin-left: 10px; }
+        .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
+        .input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; box-sizing: border-box; font-size: 1em; outline: none; }
+        .input-area button { background: #007bff; color: white; border: none; padding: 0 20px; border-radius: 20px; font-size: 1em; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="chat-header">
+    ChatVVeloce
+    <div style="position: absolute; top: 10px; right: 15px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; font-size: 0.75em; color: white;">
+        Utente: <span id="nome-badge">...</span>
+    </div>
+</div>
+
+<div class="chat-box" id="contenitore-chat"></div>
+
+<div class="input-area">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio per la classe..." onkeypress="controllaInvio(event)">
+    <button onclick="inviaMessaggio()">Invia</button>
+</div>
+
+<script>
+    const PROJECT_ID = "6a608a69001dcb3466fc";
+    const ENDPOINT = "https://appwrite.io";
+    const DATABASE_ID = "6a6359510025ce3b3c9a"; 
+    const COLLECTION_ID = "6a6359510025ce3b3c9a"; 
+
+    let nicknameCorrente = "Studente";
+
+    
+    function recuperaProfiloServer() {
+        fetch(`${ENDPOINT}/account`, {
+            method: "GET",
+            mode: "cors",
+            headers: {
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
+            }
+        })
+        .then(res => res.json())
+        .then(user => {
+            if (user && user.name) {
+                nicknameCorrente = user.name;
+                document.getElementById("nome-badge").innerText = nicknameCorrente;
+            }
+            // Avvia il caricamento dei messaggi solo dopo aver capito chi siamo
+            caricaMessaggi();
+        })
+        .catch(() => {
+            // Se non si è loggati o c'è un blocco, carica comunque i messaggi come anonimo
+            document.getElementById("nome-badge").innerText = "Ospite";
+            caricaMessaggi();
+        });
+    }
+
+    // SCARICA I MESSAGGI E IDENTIFICA L'AUTORE
+    function caricaMessaggi() {
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
+            method: "GET",
+            mode: "cors",
+            headers: {
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const box = document.getElementById("contenitore-chat");
+            box.innerHTML = ""; 
+
+            if (data.documents) {
+                data.documents.forEach(doc => {
+                    const div = document.createElement("div");
+                    
+                    // Controlla se il mittente del messaggio salvato nel database coincide con l'utente corrente
+                    const tipoClasse = (doc.autore === nicknameCorrente) ? "messaggio inviato" : "messaggio ricevuto";
+                    div.className = tipoClasse;
+
+                    const dataMessaggio = new Date(doc.ora);
+                    const oraLeggibile = dataMessaggio.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+                    div.innerHTML = `
+                        <span class="autore">${doc.autore}</span>
+                        ${doc.testo}
+                        <span class="orario">${oraLeggibile}</span>
+                    `;
+                    box.appendChild(div);
+                });
+                box.scrollTop = box.scrollHeight;
+            }
+        })
+        .catch(err => console.error("Errore lettura messaggi:", err));
+    }
+
+    
+    function inviaMessaggio() {
+        const campo = document.getElementById("campo-messaggio");
+        const testoMessaggio = campo.value.trim();
+
+        if (!testoMessaggio) return;
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
+            },
+            body: JSON.stringify({
+                documentId: "unique()",
+                data: {
+                    testo: testoMessaggio,
+                    autore: nicknameCorrente, // Nome ufficiale cloud, zero localStorage!
+                    ora: Date.now() 
+                }
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            campo.value = ""; 
+            caricaMessaggi(); 
+        })
+        .catch(err => alert("Errore di invio: controlla i permessi della collezione."));
+    }
+
+    function controllaInvio(e) {
+        if (e.key === 'Enter') {
+            inviaMessaggio();
+        }
+    }
+
+    // Parte scaricando prima i dati dell'account e poi la chat
+    recuperaProfiloServer();
+    
+    // Aggiorna la stanza ogni 3 secondi
+    setInterval(caricaMessaggi, 3000);
+</script>
+
+</body>
+</html>
+
