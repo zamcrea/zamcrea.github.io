@@ -74,10 +74,9 @@
                 return;
             }
 
-            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
             fetch(ENDPOINT + "/account", {
                 method: "POST",
-                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+                mode: "cors",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Appwrite-Project": PROJECT_ID
@@ -109,18 +108,15 @@
     }
 
     function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
-        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
-            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
+            mode: "cors",
+            credentials: "include",
+            headers: { 
+                "Content-Type": "application/json", 
+                "X-Appwrite-Project": PROJECT_ID 
             },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+            body: JSON.stringify({ email: email, password: password })
         })
         .then(res => res.json())
         .then(data => {
@@ -128,23 +124,44 @@
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.innerText = "Dati errati o utente non trovato.";
             } else {
-                localStorage.setItem("utenteLoggato", "true");
-                erroreDiv.style.display = "none";
-                
-                successoDiv.innerText = " Accesso confermato! Entrando...";
-                successoDiv.style.display = "block";
-                
-                setTimeout(function() {
+                // Svuota i vecchi record locali per sicurezza prima del nuovo salvataggio
+                localStorage.removeItem("appwrite_createdAt");
+                localStorage.removeItem("appwrite_userName");
+
+                // Recupera le informazioni dal profilo per la chat
+                fetch(ENDPOINT + "/account", {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "include",
+                    headers: { "X-Appwrite-Project": PROJECT_ID }
+                })
+                .then(userRes => userRes.json())
+                .then(user => {
+                    // Salva la data di creazione e il nickname
+                    localStorage.setItem("appwrite_createdAt", user.$createdAt || "");
+                    localStorage.setItem("appwrite_userName", user.name || "Studente");
+                    localStorage.setItem("utenteLoggato", "true");
+                    
+                    erroreDiv.style.display = "none";
+                    successoDiv.innerText = "Accesso confermato! Entrando...";
+                    successoDiv.style.display = "block";
+                    
+                    setTimeout(function() {
+                        window.location.replace("index.html?v=" + Date.now());
+                    }, 1200);
+                })
+                .catch(() => {
+                    // Riserva in caso di anomalie sulla GET di /account
+                    localStorage.setItem("utenteLoggato", "true");
                     window.location.replace("index.html?v=" + Date.now());
-                }, 1200);
+                });
             }
         })
         .catch(() => {
             erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
+            erroreDiv.innerText = "oops...! Errore di rete durante il login.";
         });
     }
 </script>
-
 </body>
 </html>
