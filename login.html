@@ -74,9 +74,10 @@
                 return;
             }
 
+            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
             fetch(ENDPOINT + "/account", {
                 method: "POST",
-                mode: "cors",
+                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
                 headers: {
                     "Content-Type": "application/json",
                     "X-Appwrite-Project": PROJECT_ID
@@ -94,8 +95,7 @@
                     erroreDiv.style.color = "#dc3545";
                     erroreDiv.innerText = "Errore: " + data.message;
                 } else {
-                    // Passa 'true' per indicare che è un account appena creato
-                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv, true);
+                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
                 }
             })
             .catch(() => {
@@ -104,21 +104,23 @@
             });
 
         } else if (azione === 'accedi') {
-            // Passa 'false' perché è un vecchio login
-            eseguiSessioneLogin(email, password, erroreDiv, successoDiv, false);
+            eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
         }
     }
 
-    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv, èNuovoAccount) {
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
-            mode: "cors",
-            credentials: "include",
-            headers: { 
-                "Content-Type": "application/json", 
-                "X-Appwrite-Project": PROJECT_ID 
+            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
             },
-            body: JSON.stringify({ email: email, password: password })
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
         })
         .then(res => res.json())
         .then(data => {
@@ -126,31 +128,10 @@
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.innerText = "Dati errati o utente non trovato.";
             } else {
-                // Pulizia preventiva dei vecchi stati
-                localStorage.removeItem("appwrite_createdAt");
-                localStorage.removeItem("appwrite_userName");
-
-                // Configura il Nickname pulito: prova a usare la stringa prima della @ se il campo è vuoto
-                const inputNick = document.getElementById('nickname').value.trim();
-                const backupNick = email.split('@')[0];
-                const nicknameFinale = inputNick || backupNick || "Studente";
-
-                // Gestione della data basata sulla variabile temporale
-                let dataIscrizione;
-                if (èNuovoAccount) {
-                    dataIscrizione = new Date().toISOString(); // Ora esatta (Verrà bloccato)
-                } else {
-                    dataIscrizione = "2024-01-01T00:00:00.000+00:00"; // Passato (Sbloccato)
-                }
-
-                // Salvataggio immediato sul browser senza attendere risposte di rete
-                localStorage.setItem("appwrite_createdAt", dataIscrizione);
-                localStorage.setItem("appwrite_userName", nicknameFinale);
                 localStorage.setItem("utenteLoggato", "true");
-                
                 erroreDiv.style.display = "none";
-                successoDiv.style.color = "#28a745";
-                successoDiv.innerText = "Accesso confermato! Entrando...";
+                
+                successoDiv.innerText = " Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(function() {
@@ -160,7 +141,7 @@
         })
         .catch(() => {
             erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "oops...! Errore di rete durante il login.";
+            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
         });
     }
 </script>
