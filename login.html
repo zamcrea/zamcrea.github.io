@@ -5,16 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ScuolaVVeloce - Accedi</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 35px 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 85%; max-width: 340px; text-align: center; }
-        h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
-        p { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
-        .btn-accedi { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
-        .btn-registrati { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
-        .error-msg { color: #dc3545; font-size: 0.9em; margin-top: 12px; display: none; font-weight: bold; }
-        .success-msg { color: #28a745; font-size: 1.05em; margin-top: 12px; display: none; font-weight: bold; }
-        .divisore { margin: 15px 0; color: #aaa; font-size: 0.85em; font-weight: bold; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 35px 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 85%;
+            max-width: 340px;
+            text-align: center;
+        }
+        h2 {
+            color: #007bff;
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .btn-accedi {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-registrati {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .error-msg {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: 12px;
+            display: none;
+            font-weight: bold;
+        }
+        .success-msg {
+            color: #28a745;
+            font-size: 1.05em;
+            margin-top: 12px;
+            display: none;
+            font-weight: bold;
+        }
+        .divisore {
+            margin: 15px 0;
+            color: #aaa;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -23,21 +94,79 @@
     <h2>ScuolaVVeloce</h2>
     <p>Usa la tua email per continuare</p>
     
-    <input type="text" id="nickname" placeholder="Nickname (solo per registrazione)">
-    <input type="email" id="email" placeholder="Inserisci la tua Email">
-    <input type="password" id="password" placeholder="Inserisci la Password">
+    <input type="text" id="nickname" 
+           placeholder="Nickname (solo registrazione)">
+    <input type="email" id="email" 
+           placeholder="Inserisci la tua Email">
+    <input type="password" id="password" 
+           placeholder="Inserisci la Password">
     
-    <button type="button" class="btn-accedi" onclick="inviaDatiAppwrite('accedi')">Accedi</button>
-    <div class="divisore">Oppure se non hai creato un account,crealo adesso!</div>
-    <button type="button" class="btn-registrati" onclick="inviaDatiAppwrite('registrati')">Registrati Gratis</button>
+    <button type="button" class="btn-accedi" 
+            onclick="inviaDatiAppwrite('accedi')">
+        Accedi
+    </button>
+    <div class="divisore">
+        Oppure se non hai creato un account, crealo adesso!
+    </div>
+    <button type="button" class="btn-registrati" 
+            onclick="inviaDatiAppwrite('registrati')">
+        Registrati Gratis
+    </button>
     
     <div id="errore" class="error-msg"></div>
     <div id="successo" class="success-msg"></div>
 </div>
-
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+    const ENDPOINT = "https://appwrite.io";
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        const secret = urlParams.get('secret');
+        const erroreDiv = document.getElementById('errore');
+        const successoDiv = document.getElementById('successo');
+
+        if (userId && secret) {
+            erroreDiv.style.color = "#666";
+            erroreDiv.innerText = "Verifica account sul server...";
+            erroreDiv.style.display = "block";
+
+            fetch(ENDPOINT + "/account/verification", {
+                method: "PUT",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    secret: secret
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code && data.code >= 400) {
+                    erroreDiv.style.color = "#dc3545";
+                    erroreDiv.innerText = "Errore: " + data.message;
+                } else {
+                    erroreDiv.style.display = "none";
+                    successoDiv.style.color = "#28a745";
+                    successoDiv.innerText = "Email verificata! Accedi.";
+                    successoDiv.style.display = "block";
+                    window.history.replaceState(
+                        {}, 
+                        document.title, 
+                        window.location.pathname
+                    );
+                }
+            })
+            .catch(() => {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Errore di rete nella verifica.";
+            });
+        }
+    };
 
     function inviaDatiAppwrite(azione) {
         const nickname = document.getElementById('nickname').value.trim();
@@ -62,22 +191,21 @@
 
         if (azione === 'registrati') {
             if (!nickname) {
-                erroreDiv.innerText = "Scegli un Nickname per entrare a far parte di questa comunita!";
+                erroreDiv.innerText = "Scegli un Nickname!";
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.style.display = "block";
                 return;
             }
             if (password.length < 8) {
-                erroreDiv.innerText = "La password deve avere almeno 8 caratteri!";
+                erroreDiv.innerText = "La password richiede almeno 8 caratteri!";
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.style.display = "block";
                 return;
             }
 
-            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
             fetch(ENDPOINT + "/account", {
                 method: "POST",
-                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+                mode: "cors",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Appwrite-Project": PROJECT_ID
@@ -95,12 +223,17 @@
                     erroreDiv.style.color = "#dc3545";
                     erroreDiv.innerText = "Errore: " + data.message;
                 } else {
-                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+                    gestisciVerificaNuovoUtente(
+                        email, 
+                        password, 
+                        erroreDiv, 
+                        successoDiv
+                    );
                 }
             })
             .catch(() => {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "oh uh! il server non risponde alla registrazione.";
+                erroreDiv.innerText = "Il server non risponde.";
             });
 
         } else if (azione === 'accedi') {
@@ -108,40 +241,111 @@
         }
     }
 
-    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
-        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
+    function gestisciVerificaNuovoUtente(email, password, erroreDiv, successoDiv) {
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
-            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+            mode: "cors",
             headers: {
                 "Content-Type": "application/json",
                 "X-Appwrite-Project": PROJECT_ID
             },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+            body: JSON.stringify({ email: email, password: password })
+        })
+        .then(res => res.json())
+        .then(sessionData => {
+            if (sessionData.code && sessionData.code >= 400) {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Errore sessione: " + sessionData.message;
+            } else {
+                const redirectUrl = window.location.origin + 
+                                    window.location.pathname;
+
+                fetch(ENDPOINT + "/account/verification", {
+                    method: "POST",
+                    mode: "cors",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Appwrite-Project": PROJECT_ID
+                    },
+                    body: JSON.stringify({ url: redirectUrl })
+                })
+                .then(() => {
+                    fetch(ENDPOINT + "/account/sessions/current", {
+                        method: "DELETE",
+                        mode: "cors",
+                        headers: { "X-Appwrite-Project": PROJECT_ID }
+                    })
+                    .then(() => {
+                        erroreDiv.style.display = "none";
+                        successoDiv.style.color = "#28a745";
+                        successoDiv.innerText = "Registrato! Controlla la mail " +
+                                                "per attivare l'account.";
+                        successoDiv.style.display = "block";
+                    });
+                });
+            }
+        })
+        .catch(() => {
+            erroreDiv.style.color = "#dc3545";
+            erroreDiv.innerText = "Impossibile inviare la mail.";
+        });
+    }
+
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+        fetch(ENDPOINT + "/account/sessions/email", {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({ email: email, password: password })
         })
         .then(res => res.json())
         .then(data => {
             if (data.code && data.code >= 400) {
                 erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Dati errati o utente non trovato.";
+                erroreDiv.innerText = "Dati errati o utente assente.";
             } else {
-                localStorage.setItem("utenteLoggato", "true");
-                erroreDiv.style.display = "none";
-                
-                successoDiv.innerText = " Accesso confermato! Entrando...";
-                successoDiv.style.display = "block";
-                
-                setTimeout(function() {
-                    window.location.replace("index.html?v=" + Date.now());
-                }, 1200);
+                fetch(ENDPOINT + "/account", {
+                    method: "GET",
+                    mode: "cors",
+                    headers: { "X-Appwrite-Project": PROJECT_ID }
+                })
+                .then(userRes => userRes.json())
+                .then(userData => {
+                    if (userData.emailVerification === true) {
+                        localStorage.setItem("utenteLoggato", "true");
+                        erroreDiv.style.display = "none";
+                        
+                        successoDiv.style.color = "#28a745";
+                        successoDiv.innerText = "Accesso confermato! Entrando...";
+                        successoDiv.style.display = "block";
+                        
+                        setTimeout(function() {
+                            window.location.replace(
+                                "index.html?v=" + Date.now()
+                            );
+                        }, 1200);
+                    } else {
+                        fetch(ENDPOINT + "/account/sessions/current", {
+                            method: "DELETE",
+                            mode: "cors",
+                            headers: { "X-Appwrite-Project": PROJECT_ID }
+                        })
+                        .then(() => {
+                            erroreDiv.style.color = "#dc3545";
+                            erroreDiv.innerText = "Accesso negato! Verifica " +
+                                                  "prima la tua email.";
+                            erroreDiv.style.display = "block";
+                        });
+                    }
+                });
             }
         })
         .catch(() => {
             erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
+            erroreDiv.innerText = "Errore di rete durante il login.";
         });
     }
 </script>
