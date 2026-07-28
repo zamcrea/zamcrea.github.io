@@ -118,7 +118,7 @@
 </div>
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 
     // Intercetta i parametri della mail all'avvio
     window.onload = function() {
@@ -167,6 +167,201 @@
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.innerText = "Errore di rete nella verifica.";
             });
+        }
+    };
+
+    function inviaDatiAppwrite(azione) {
+        const nickname = document.getElementById('nickname').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const erroreDiv = document.getElementById('errore');
+        const successoDiv = document.getElementById('successo');
+
+        erroreDiv.style.display = "none";
+        successoDiv.style.display = "none";
+
+        if (!email || !password) {
+            erroreDiv.innerText = "Inserisci email e password!";
+            erroreDiv.style.color = "#dc3545";
+            erroreDiv.style.display = "block";
+            return;
+        }
+
+        erroreDiv.innerText = "Invio dati verso il server...";
+        erroreDiv.style.color = "#666";
+        erroreDiv.style.display = "block";
+
+        if (azione === 'registrati') {
+            if (!nickname) {
+                erroreDiv.innerText = "Scegli un Nickname!";
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.style.display = "block";
+                return;
+            }
+            if (password.length < 8) {
+                erroreDiv.innerText = "La password richiede almeno 8 caratteri!";
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.style.display = "block";
+                return;
+            }
+
+            fetch(ENDPOINT + "/account", {
+                method: "POST",
+                mode: "cors",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    userId: "unique()",
+                    email: email,
+                    password: password,
+                    name: nickname
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code && data.code >= 400) {
+                    erroreDiv.style.color = "#dc3545";
+                    erroreDiv.innerText = "Errore: " + data.message;
+                } else {
+                    gestisciVerificaNuovoUtente(
+                        email, 
+                        password, 
+                        erroreDiv, 
+                        successoDiv
+                    );
+                }
+            })
+            .catch(() => {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Il server non risponde.";
+            });
+
+        } else if (azione === 'accedi') {
+            eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+        }
+    }
+
+    function gestisciVerificaNuovoUtente(email, password, erroreDiv, successoDiv) {
+        fetch(ENDPOINT + "/account/sessions/email", {
+            method: "POST",
+            mode: "cors",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({ email: email, password: password })
+        })
+        .then(res => res.json())
+        .then(sessionData => {
+            if (sessionData.code && sessionData.code >= 400) {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Errore sessione: " + sessionData.message;
+            } else {
+                const redirectUrl = window.location.origin + 
+                                    window.location.pathname;
+
+                fetch(ENDPOINT + "/account/verification", {
+                    method: "POST",
+                    mode: "cors",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Appwrite-Project": PROJECT_ID
+                    },
+                    body: JSON.stringify({ url: redirectUrl })
+                })
+                .then(() => {
+                    // CORREZIONE: Rimossa l'intestazione Content-Type che mandava in crash il DELETE in CORS
+                    fetch(ENDPOINT + "/account/sessions/current", {
+                        method: "DELETE",
+                        mode: "cors",
+                        credentials: "include",
+                        headers: { 
+                            "X-Appwrite-Project": PROJECT_ID 
+                        }
+                    })
+                    .then(() => {
+                        erroreDiv.style.display = "none";
+                        successoDiv.style.color = "#28a745";
+                        successoDiv.innerText = "Registrato! Controlla la mail " +
+                                                "per attivare l'account.";
+                        successoDiv.style.display = "block";
+                    });
+                });
+            }
+        })
+        .catch(() => {
+            erroreDiv.style.color = "#dc3545";
+            erroreDiv.innerText = "Impossibile inviare la mail.";
+        });
+    }
+
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+        fetch(ENDPOINT + "/account/sessions/email", {
+            method: "POST",
+            mode: "cors",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({ email: email, password: password })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code && data.code >= 400) {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Dati errati o utente assente.";
+            } else {
+                // CORREZIONE: Rimosso Content-Type inutile per le richieste GET
+                fetch(ENDPOINT + "/account", {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "include",
+                    headers: { 
+                        "X-Appwrite-Project": PROJECT_ID 
+                    }
+                })
+                .then(userRes => userRes.json())
+                .then(userData => {
+                    if (userData.emailVerification === true) {
+                        localStorage.setItem("utenteLoggato", "true");
+                        erroreDiv.style.display = "none";
+                        
+                        successoDiv.style.color = "#28a745";
+                        successoDiv.innerText = "Accesso confermato! Entrando...";
+                        successoDiv.style.display = "block";
+                        
+                        setTimeout(function() {
+                            window.location.replace(
+                                "index.html?v=" + Date.now()
+                            );
+                        }, 1200);
+                    } else {
+                        // CORREZIONE: Rimosso Content-Type inutile per le richieste DELETE
+                        fetch(ENDPOINT + "/account/sessions/current", {
+                            method: "DELETE",
+                            mode: "cors",
+                            credentials: "include",
+                            headers: { 
+                                "X-Appwrite-Project": PROJECT_ID 
+                            }
+                        })
+                        .then(() => {
+                            erroreDiv.style.color = "#dc3545";
+                            erroreDiv.innerText = "Accesso negato! Verifica " +
+                                                  "prima la tua email.";
+                            erroreDiv.style.display = "block";
+                        });
+            }
+        })
+        .catch(() => {
+            erroreDiv.style.color = "#dc3545";
+Usa il codice con cautela.erroreDiv.innerText = "Errore di rete durante il login.";});
         }
     };
 
