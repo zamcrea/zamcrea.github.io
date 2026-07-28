@@ -47,78 +47,98 @@
     const COLLECTION_ID = "messages"; 
 
     let nicknameCorrente = "Studente";
-    let ID_INTERVALLO_CHAT = null; // Salva il timer per poterlo gestire
+    let loopMessaggi = null;
 
-    function recuperaProfiloServer() {
+    // Gestione asincrona solida per saltare i blocchi di sicurezza
+    async function controllaEInizializza() {
+        const boxChat = document.getElementById("contenitore-chat");
+        boxChat.innerHTML = "Verifica sicurezza account...";
+
+        // 1. Recupera i dati salvati localmente (Evita bug di rete improvvisi)
+        let oraIscrizione = localStorage.getItem("appwrite_createdAt");
+        let nomeSalvato = localStorage.getItem("appwrite_userName");
         const jwtToken = localStorage.getItem("appwriteJWT");
 
-        let nomeDispositivo = "Dispositivo PC";
-        const stringaBrowser = navigator.userAgent.toLowerCase();
-        
-        if (stringaBrowser.includes("ipad")) { nomeDispositivo = "iPad"; } 
-        else if (stringaBrowser.includes("iphone")) { nomeDispositivo = "iPhone"; } 
-        else if (stringaBrowser.includes("android")) { nomeDispositivo = "Android"; } 
-        else if (stringaBrowser.includes("macintosh")) { nomeDispositivo = "Mac"; }
+        // 2. Se non sono in memoria locale, interroga il server Appwrite
+        if (!oraIscrizione) {
+            let intestazioni = {
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
+            };
+            if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
 
-        let intestazioni = {
-            "X-Appwrite-Project": PROJECT_ID,
-            "X-SDK-Name": "Web",
-            "X-SDK-Version": "14.0.0"
-        };
-        if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
+            try {
+                const risposta = await fetch(`${ENDPOINT}/account`, {
+                    method: "GET",
+                    mode: "cors",
+                    credentials: "include",
+                    headers: intestazioni
+                });
+                const user = await risposta.json();
 
-        // Forza lo svuotamento preventivo della chat per sicurezza prima del controllo
-        document.getElementById("contenitore-chat").innerHTML = "Verifica sicurezza in corso...";
-
-        fetch(`${ENDPOINT}/account`, {
-            method: "GET",
-            mode: "cors",
-            headers: intestazioni
-        })
-        .then(res => res.json())
-        .then(user => {
-            // CONTROLLO RIGIDO DELLE 24 ORE
-            if (user && user.$createdAt) {
-                const dataCreazione = new Date(user.$createdAt).getTime();
-                const dataAttuale = Date.now();
-                const ventiquattroOre = 24 * 60 * 60 * 1000;
-
-                if (dataAttuale - dataCreazione < ventiquattroOre) {
-                    // BLOCCO RETE: Ferma l'esecuzione e cancella l'interfaccia di input
-                    document.body.innerHTML = `
-                        <div class="blocco-sicurezza">
-                            <h2>Accesso Limitato ⏳</h2>
-                            <p>Per evitare lo spam, puoi usare la chat solo dopo 24 ore dalla registrazione.</p>
-                            <p>Torna quando il tuo account sarà abilitato!</p>
-                            <a href="index.html">Torna alla Home</a>
-                        </div>
-                    `;
-                    return; // Stoppa definitivamente lo script
+                if (user && user.$createdAt) {
+                    oraIscrizione = user.$createdAt;
+                    nomeSalvato = user.name || "";
+                    // Metti al sicuro i dati nel browser/WebView per i prossimi accessi
+                    localStorage.setItem("appwrite_createdAt", user.$createdAt);
+                    localStorage.setItem("appwrite_userName", user.name || "");
+                } else {
+                    mostraSchermataErrore();
+                    return;
                 }
+            } catch (e) {
+                mostraSchermataErrore();
+                return;
             }
+        }
 
-            // SOLO SE SUPERA IL CONTROLLO IL CODICE PROSEGUE QUI SOTTO
-            if (user && user.name && user.name.trim() !== "") {
-                nicknameCorrente = user.name;
-            } else {
-                nicknameCorrente = nomeDispositivo;
-            }
-            document.getElementById("nome-badge").innerText = nicknameCorrente;
-            
-            // Avvia lo scaricamento dei messaggi e attiva il loop dei 3 secondi
-            caricaMessaggi();
-            ID_INTERVALLO_CHAT = setInterval(caricaMessaggi, 3000);
-        })
-        .catch(() => {
-            // Se salta la connessione con il cloud blocca tutto per precauzione
+        // 3. MATEMATICA DELLE 24 ORE
+        const dataCreazione = new Date(oraIscrizione).getTime();
+        const dataAttuale = Date.now();
+        const ventiquattroOre = 24 * 60 * 60 * 1000;
+
+        if (dataAttuale - dataCreazione < ventiquattroOre) {
+            // Blocca la visualizzazione e sovrascrivi la pagina
             document.body.innerHTML = `
                 <div class="blocco-sicurezza">
-                    <h2>Errore di Autenticazione ⚠️</h2>
-                    <p>Impossibile validare i criteri di sicurezza con il server Appwrite.</p>
+                    <h2>Accesso Limitato ⏳</h2>
+                    <p>Per prevenire lo spam, la chat richiede un'anzianità di almeno 24 ore.</p>
+                    <p>Potrai accedere quando il tuo profilo sarà abilitato dal sistema.</p>
                     <a href="index.html">Torna alla Home</a>
                 </div>
             `;
-        });
+            return;
+        }
+
+        // 4. SE L'ACCOUNT È AUTORIZZATO, APRI LA CHAT
+        if (nomeSalvato && nomeSalvato.trim() !== "") {
+            nicknameCorrente = nomeSalvato;
+        } else {
+            // Rilevamento di riserva del dispositivo
+            const browser = navigator.userAgent.toLowerCase();
+            if (browser.includes("ipad")) nicknameCorrente = "iPad";
+            else if (browser.includes("iphone")) nicknameCorrente = "iPhone";
+            else if (browser.includes("android")) nicknameCorrente = "Android";
+            else if (browser.includes("macintosh")) nicknameCorrente = "Mac";
+            else nicknameCorrente = "Dispositivo PC";
+        }
+
+        document.getElementById("nome-badge").innerText = nicknameCorrente;
+        
+        // Esegui la prima lettura e fai partire il timer dei 3 secondi
+        caricaMessaggi();
+        loopMessaggi = setInterval(caricaMessaggi, 3000);
+    }
+
+    function mostraSchermataErrore() {
+        document.body.innerHTML = `
+            <div class="blocco-sicurezza">
+                <h2>Errore di Autenticazione ⚠️</h2>
+                <p>Sessione scaduta o credenziali non valide con Appwrite Cloud.</p>
+                <a href="login.html">Effettua di nuovo il Login</a>
+            </div>
+        `;
     }
 
     function caricaMessaggi() {
@@ -196,11 +216,10 @@
         }
     }
 
-    // L'avvio automatico chiama SOLO il controllo del profilo.
-    // Il setInterval si attiverà unicamente dall'interno della promessa risolta.
-    recuperaProfiloServer();
+    // Avvia la catena di controllo asincrona
+    controllaEInizializza();
 </script>
->
+
 </body>
 </html>
 
