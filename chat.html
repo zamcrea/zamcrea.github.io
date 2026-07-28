@@ -42,12 +42,12 @@
 </div>
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+    const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
 
     let nicknameCorrente = "Studente";
-    let controlloAttivo = false;
+    let ID_INTERVALLO_CHAT = null; // Salva il timer per poterlo gestire
 
     function recuperaProfiloServer() {
         const jwtToken = localStorage.getItem("appwriteJWT");
@@ -67,6 +67,9 @@
         };
         if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
 
+        // Forza lo svuotamento preventivo della chat per sicurezza prima del controllo
+        document.getElementById("contenitore-chat").innerHTML = "Verifica sicurezza in corso...";
+
         fetch(`${ENDPOINT}/account`, {
             method: "GET",
             mode: "cors",
@@ -74,42 +77,44 @@
         })
         .then(res => res.json())
         .then(user => {
-            // CONTROLLO DELLE 24 ORE
+            // CONTROLLO RIGIDO DELLE 24 ORE
             if (user && user.$createdAt) {
                 const dataCreazione = new Date(user.$createdAt).getTime();
                 const dataAttuale = Date.now();
                 const ventiquattroOre = 24 * 60 * 60 * 1000;
 
                 if (dataAttuale - dataCreazione < ventiquattroOre) {
-                    // L'account ha meno di 24 ore: Cancella tutto e blocca
+                    // BLOCCO RETE: Ferma l'esecuzione e cancella l'interfaccia di input
                     document.body.innerHTML = `
                         <div class="blocco-sicurezza">
                             <h2>Accesso Limitato ⏳</h2>
-                            <p>Per evitare spam, puoi usare la chat solo dopo 24 ore dalla registrazione.</p>
-                            <p>Torna quando il tuo account sarà abbastanza vecchio!</p>
+                            <p>Per evitare lo spam, puoi usare la chat solo dopo 24 ore dalla registrazione.</p>
+                            <p>Torna quando il tuo account sarà abilitato!</p>
                             <a href="index.html">Torna alla Home</a>
                         </div>
                     `;
-                    return;
+                    return; // Stoppa definitivamente lo script
                 }
             }
 
-            // Se supera il controllo, carica il profilo normalmente
-            controlloAttivo = true;
+            // SOLO SE SUPERA IL CONTROLLO IL CODICE PROSEGUE QUI SOTTO
             if (user && user.name && user.name.trim() !== "") {
                 nicknameCorrente = user.name;
             } else {
                 nicknameCorrente = nomeDispositivo;
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
+            
+            // Avvia lo scaricamento dei messaggi e attiva il loop dei 3 secondi
             caricaMessaggi();
+            ID_INTERVALLO_CHAT = setInterval(caricaMessaggi, 3000);
         })
         .catch(() => {
-            // Se salta la rete a monte e non si può verificare il server, blocca per sicurezza
+            // Se salta la connessione con il cloud blocca tutto per precauzione
             document.body.innerHTML = `
                 <div class="blocco-sicurezza">
-                    <h2>Errore di Sicurezza ⚠️</h2>
-                    <p>Impossibile verificare l'anzianità dell'account dal server.</p>
+                    <h2>Errore di Autenticazione ⚠️</h2>
+                    <p>Impossibile validare i criteri di sicurezza con il server Appwrite.</p>
                     <a href="index.html">Torna alla Home</a>
                 </div>
             `;
@@ -117,8 +122,6 @@
     }
 
     function caricaMessaggi() {
-        if (!controlloAttivo) return; // Non caricare se l'utente non è ancora verificato
-
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
             method: "GET",
             mode: "cors",
@@ -156,8 +159,6 @@
     }
 
     function inviaMessaggio() {
-        if (!controlloAttivo) return;
-
         const campo = document.getElementById("campo-messaggio");
         const testoMessaggio = campo.value.trim();
 
@@ -195,9 +196,11 @@
         }
     }
 
+    // L'avvio automatico chiama SOLO il controllo del profilo.
+    // Il setInterval si attiverà unicamente dall'interno della promessa risolta.
     recuperaProfiloServer();
-    setInterval(caricaMessaggi, 3000);
 </script>
+>
 </body>
 </html>
 
