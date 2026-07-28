@@ -131,7 +131,15 @@
         loopMessaggi = setInterval(caricaMessaggi, 3000);
     }
 
-
+    function mostraSchermataErrore() {
+        document.body.innerHTML = `
+            <div class="blocco-sicurezza">
+                <h2>Errore di Autenticazione ⚠️</h2>
+                <p>Sessione scaduta o credenziali non valide con Appwrite Cloud.</p>
+                <a href="login.html">Effettua di nuovo il Login</a>
+            </div>
+        `;
+    }
 
     function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
@@ -214,4 +222,3 @@
 
 </body>
 </html>
-
