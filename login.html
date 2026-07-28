@@ -120,6 +120,7 @@
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
 
+    // Intercetta i parametri della mail all'avvio
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('userId');
@@ -135,6 +136,7 @@
             fetch(ENDPOINT + "/account/verification", {
                 method: "PUT",
                 mode: "cors",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Appwrite-Project": PROJECT_ID
@@ -206,6 +208,7 @@
             fetch(ENDPOINT + "/account", {
                 method: "POST",
                 mode: "cors",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Appwrite-Project": PROJECT_ID
@@ -245,6 +248,7 @@
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
             mode: "cors",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "X-Appwrite-Project": PROJECT_ID
@@ -263,6 +267,7 @@
                 fetch(ENDPOINT + "/account/verification", {
                     method: "POST",
                     mode: "cors",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
                         "X-Appwrite-Project": PROJECT_ID
@@ -273,6 +278,7 @@
                     fetch(ENDPOINT + "/account/sessions/current", {
                         method: "DELETE",
                         mode: "cors",
+                        credentials: "include",
                         headers: { "X-Appwrite-Project": PROJECT_ID }
                     })
                     .then(() => {
@@ -295,6 +301,7 @@
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
             mode: "cors",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "X-Appwrite-Project": PROJECT_ID
@@ -310,6 +317,7 @@
                 fetch(ENDPOINT + "/account", {
                     method: "GET",
                     mode: "cors",
+                    credentials: "include",
                     headers: { "X-Appwrite-Project": PROJECT_ID }
                 })
                 .then(userRes => userRes.json())
@@ -331,6 +339,7 @@
                         fetch(ENDPOINT + "/account/sessions/current", {
                             method: "DELETE",
                             mode: "cors",
+                            credentials: "include",
                             headers: { "X-Appwrite-Project": PROJECT_ID }
                         })
                         .then(() => {
@@ -349,6 +358,3 @@
         });
     }
 </script>
-
-</body>
-</html>
