@@ -15,14 +15,12 @@
         .orario { font-size: 0.65em; color: #666; float: right; margin-top: 5px; margin-left: 10px; }
         .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
         .input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; box-sizing: border-box; font-size: 1em; outline: none; }
-        .input-area button { background: #06911b; color: white; border: none; padding: 0 20px; border-radius: 20px; font-size: 1em; font-weight: bold; cursor: pointer; }
-        .blocco-sicurezza { text-align: center; padding: 50px 20px; font-family: Arial, sans-serif; background: #f0f2f5; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .blocco-sicurezza h2 { color: #dc3545; }
-        .blocco-sicurezza a { display: inline-block; margin-top: 15px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; }
+        .input-area button { background: #007bff; color: white; border: none; padding: 0 20px; border-radius: 20px; font-size: 1em; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 <script>
+    // nuh uh not so fast
     if (localStorage.getItem("utenteLoggato") !== "true") {
         window.location.replace("login.html");
     }
@@ -37,109 +35,68 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Cliccami per scrivere" onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio per la classe..." onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
+
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
 
     let nicknameCorrente = "Studente";
-    let loopMessaggi = null;
 
-    // Gestione asincrona solida per saltare i blocchi di sicurezza
-    async function controllaEInizializza() {
-        const boxChat = document.getElementById("contenitore-chat");
-        boxChat.innerHTML = "Verifica sicurezza account...";
-
-        // 1. Recupera i dati salvati localmente (Evita bug di rete improvvisi)
-        let oraIscrizione = localStorage.getItem("appwrite_createdAt");
-        let nomeSalvato = localStorage.getItem("appwrite_userName");
+        // RECUPERA IL NOME: Prova prima sul server, poi nella memoria
+        function recuperaProfiloServer() {
         const jwtToken = localStorage.getItem("appwriteJWT");
 
-        // 2. Se non sono in memoria locale, interroga il server Appwrite
-        if (!oraIscrizione) {
-            let intestazioni = {
-                "X-Appwrite-Project": PROJECT_ID,
-                "X-SDK-Name": "Web",
-                "X-SDK-Version": "14.0.0"
-            };
-            if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
-
-            try {
-                const risposta = await fetch(`${ENDPOINT}/account`, {
-                    method: "GET",
-                    mode: "cors",
-                    credentials: "include",
-                    headers: intestazioni
-                });
-                const user = await risposta.json();
-
-                if (user && user.$createdAt) {
-                    oraIscrizione = user.$createdAt;
-                    nomeSalvato = user.name || "";
-                    // Metti al sicuro i dati nel browser/WebView per i prossimi accessi
-                    localStorage.setItem("appwrite_createdAt", user.$createdAt);
-                    localStorage.setItem("appwrite_userName", user.name || "");
-                } else {
-                    mostraSchermataErrore();
-                    return;
-                }
-            } catch (e) {
-                mostraSchermataErrore();
-                return;
-            }
-        }
-
-        // 3. MATEMATICA DELLE 24 ORE
-        const dataCreazione = new Date(oraIscrizione).getTime();
-        const dataAttuale = Date.now();
-        const ventiquattroOre = 24 * 60 * 60 * 1000;
-
-        if (dataAttuale - dataCreazione < ventiquattroOre) {
-            // Blocca la visualizzazione e sovrascrivi la pagina
-            document.body.innerHTML = `
-                <div class="blocco-sicurezza">
-                    <h2>Accesso Limitato ⏳</h2>
-                    <p>Per prevenire lo spam, la chat richiede un'anzianità di almeno 24 ore.</p>
-                    <p>Potrai accedere quando il tuo profilo sarà abilitato dal sistema.</p>
-                    <a href="index.html">Torna alla Home</a>
-                </div>
-            `;
-            return;
-        }
-
-        // 4. SE L'ACCOUNT È AUTORIZZATO, APRI LA CHAT
-        if (nomeSalvato && nomeSalvato.trim() !== "") {
-            nicknameCorrente = nomeSalvato;
-        } else {
-            // Rilevamento di riserva del dispositivo
-            const browser = navigator.userAgent.toLowerCase();
-            if (browser.includes("ipad")) nicknameCorrente = "iPad";
-            else if (browser.includes("iphone")) nicknameCorrente = "iPhone";
-            else if (browser.includes("android")) nicknameCorrente = "Android";
-            else if (browser.includes("macintosh")) nicknameCorrente = "Mac";
-            else nicknameCorrente = "Dispositivo PC";
-        }
-
-        document.getElementById("nome-badge").innerText = nicknameCorrente;
+        // 1. Rileva in automatico il tipo di dispositivo
+        let nomeDispositivo = "Dispositivo PC";
+        const stringaBrowser = navigator.userAgent.toLowerCase();
         
-        // Esegui la prima lettura e fai partire il timer dei 3 secondi
-        caricaMessaggi();
-        loopMessaggi = setInterval(caricaMessaggi, 3000);
+        if (stringaBrowser.includes("ipad")) {
+            nomeDispositivo = "iPad";
+        } else if (stringaBrowser.includes("iphone")) {
+            nomeDispositivo = "iPhone";
+        } else if (stringaBrowser.includes("android")) {
+            nomeDispositivo = "Android";
+        } else if (stringaBrowser.includes("macintosh")) {
+            nomeDispositivo = "Mac";
+        }
+
+        let intestazioni = {
+            "X-Appwrite-Project": PROJECT_ID,
+            "X-SDK-Name": "Web",
+            "X-SDK-Version": "14.0.0"
+        };
+        if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
+
+        fetch(`${ENDPOINT}/account`, {
+            method: "GET",
+            mode: "cors",
+            headers: intestazioni
+        })
+        .then(res => res.json())
+        .then(user => {
+            // 2. Se il cloud risponde con un nome reale, usa quello!
+            if (user && user.name && user.name.trim() !== "") {
+                nicknameCorrente = user.name;
+            } else {
+                // 3. RISERVA: Se il server è vuoto, assegna il nome del dispositivo
+                nicknameCorrente = nomeDispositivo;
+            }
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
+            caricaMessaggi();
+        })
+        .catch(() => {
+            // 4. RISERVA ANCHE SE SALTA LA RETE
+            nicknameCorrente = nomeDispositivo;
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
+            caricaMessaggi();
+        });
     }
 
-    function mostraSchermataErrore() {
-        document.body.innerHTML = `
-            <div class="blocco-sicurezza">
-                <h2>Errore di Autenticazione ⚠️</h2>
-                <p>Sessione scaduta o credenziali non valide con Appwrite Cloud.</p>
-                <a href="login.html">Effettua di nuovo il Login</a>
-            </div>
-        `;
-    }
 
     function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
@@ -207,7 +164,7 @@
             campo.value = ""; 
             caricaMessaggi(); 
         })
-        .catch(err => alert("Errore di invio. Blame Kernel."));
+        .catch(err => alert("Errore di invio. Sembra che qualcuno abbia toccato qualcosa di sbagliato!Blame Kernel."));
     }
 
     function controllaInvio(e) {
@@ -216,9 +173,17 @@
         }
     }
 
-    // Avvia la catena di controllo asincrona
-    controllaEInizializza();
+    recuperaProfiloServer();
+    setInterval(caricaMessaggi, 3000);
 </script>
+
+<script>
+    // nuh uh not so fast
+    if (localStorage.getItem("utenteLoggato") !== "true") {
+        window.location.replace("login.html");
+    }
+</script>
+
 
 </body>
 </html>
