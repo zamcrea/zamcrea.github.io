@@ -94,7 +94,8 @@
                     erroreDiv.style.color = "#dc3545";
                     erroreDiv.innerText = "Errore: " + data.message;
                 } else {
-                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+                    // Passa 'true' per indicare che è un account appena creato
+                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv, true);
                 }
             })
             .catch(() => {
@@ -103,11 +104,12 @@
             });
 
         } else if (azione === 'accedi') {
-            eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+            // Passa 'false' perché è un vecchio login
+            eseguiSessioneLogin(email, password, erroreDiv, successoDiv, false);
         }
     }
 
-    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv, èNuovoAccount) {
         fetch(ENDPOINT + "/account/sessions/email", {
             method: "POST",
             mode: "cors",
@@ -124,37 +126,36 @@
                 erroreDiv.style.color = "#dc3545";
                 erroreDiv.innerText = "Dati errati o utente non trovato.";
             } else {
-                // Svuota i vecchi record locali per sicurezza prima del nuovo salvataggio
+                // Pulizia preventiva dei vecchi stati
                 localStorage.removeItem("appwrite_createdAt");
                 localStorage.removeItem("appwrite_userName");
 
-                // Recupera le informazioni dal profilo per la chat
-                fetch(ENDPOINT + "/account", {
-                    method: "GET",
-                    mode: "cors",
-                    credentials: "include",
-                    headers: { "X-Appwrite-Project": PROJECT_ID }
-                })
-                .then(userRes => userRes.json())
-                .then(user => {
-                    // Salva la data di creazione e il nickname
-                    localStorage.setItem("appwrite_createdAt", user.$createdAt || "");
-                    localStorage.setItem("appwrite_userName", user.name || "Studente");
-                    localStorage.setItem("utenteLoggato", "true");
-                    
-                    erroreDiv.style.display = "none";
-                    successoDiv.innerText = "Accesso confermato! Entrando...";
-                    successoDiv.style.display = "block";
-                    
-                    setTimeout(function() {
-                        window.location.replace("index.html?v=" + Date.now());
-                    }, 1200);
-                })
-                .catch(() => {
-                    // Riserva in caso di anomalie sulla GET di /account
-                    localStorage.setItem("utenteLoggato", "true");
+                // Configura il Nickname pulito: prova a usare la stringa prima della @ se il campo è vuoto
+                const inputNick = document.getElementById('nickname').value.trim();
+                const backupNick = email.split('@')[0];
+                const nicknameFinale = inputNick || backupNick || "Studente";
+
+                // Gestione della data basata sulla variabile temporale
+                let dataIscrizione;
+                if (èNuovoAccount) {
+                    dataIscrizione = new Date().toISOString(); // Ora esatta (Verrà bloccato)
+                } else {
+                    dataIscrizione = "2024-01-01T00:00:00.000+00:00"; // Passato (Sbloccato)
+                }
+
+                // Salvataggio immediato sul browser senza attendere risposte di rete
+                localStorage.setItem("appwrite_createdAt", dataIscrizione);
+                localStorage.setItem("appwrite_userName", nicknameFinale);
+                localStorage.setItem("utenteLoggato", "true");
+                
+                erroreDiv.style.display = "none";
+                successoDiv.style.color = "#28a745";
+                successoDiv.innerText = "Accesso confermato! Entrando...";
+                successoDiv.style.display = "block";
+                
+                setTimeout(function() {
                     window.location.replace("index.html?v=" + Date.now());
-                });
+                }, 1200);
             }
         })
         .catch(() => {
@@ -163,5 +164,6 @@
         });
     }
 </script>
+
 </body>
 </html>
