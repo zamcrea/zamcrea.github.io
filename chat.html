@@ -177,7 +177,11 @@
             campo.value = "";
             return;
         }
-
+        if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
+    mostraRegoleChat();
+    campo.value = "";
+    return;
+        }
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
             method: "POST",
             mode: "cors",
@@ -212,6 +216,18 @@
 
     scaricaProfiloDaServer();
     setInterval(caricaMessaggi, 3000);
+    function mostraRegoleChat() {
+    const elencoRegole = 
+        "REGOLE DI VVCHAT!\n\n" +
+        "1. Non insultare qualcuno/Non dire parolacce/bestemmie(parole volgari).  Può comportare da warning a perma-ban dalla chat(in base alla gravità).\n" +
+        "2. Niente Spam: non inondare la chat di messaggi ripetitivi.  Da warning a ban\n" +
+        "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/discussioni riferite alla scuola. Warning\n" +
+        "4. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.\n\n" +
+        "Usa /(commando) per eseguire commandi(/whoami,/rules)";
+        
+    alert(elencoRegole);
+}
+
 </script>
 </body>
 </html>
