@@ -34,18 +34,20 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Email Password" onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Nome Password" onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
-div>
+
 
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
+    const PROFILI_COLLECTION_ID = "profili"; 
 
     let nicknameCorrente = "Studente";
+    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; 
 
     function ottieniNomeDispositivo() {
         const stringaBrowser = navigator.userAgent.toLowerCase();
@@ -57,71 +59,82 @@ div>
     }
 
     function scaricaProfiloDaServer() {
-        const localeNick = localStorage.getItem("appwrite_userName");
-        if (localeNick) {
-            nicknameCorrente = localeNick;
-            document.getElementById("nome-badge").innerText = nicknameCorrente;
-            caricaMessaggi();
-            return;
-        }
-        nicknameCorrente = ottieniNomeDispositivo();
-        document.getElementById("nome-badge").innerText = nicknameCorrente;
-        caricaMessaggi();
-    }
+        emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
 
-    // NUOVA LOGICA: Autenticazione sicura tramite Header Progetto (Senza Cookie/CORS)
-    function eseguiComandoWhoami(testo) {
-        const parametri = testo.substring(8).trim().split(' ');
-        const emailInserita = parametri[0] ? parametri[0].trim() : "";
-        const passwordInserita = parametri[1] ? parametri[1].trim() : "";
+        const arrayQuery = [`equal("email", "${emailUtenteFittizia}")`];
+        const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
 
-        if (!emailInserita || !passwordInserita) {
-            alert("⚠️ Errore sintassi! Usa il comando così:\n/whoami email@scuola.it password");
-            return;
-        }
-
-        console.log("Verifica credenziali per: " + emailInserita);
-
-        // Creiamo la query codificata in formato array JSON accettato dalle API REST di Appwrite
-        const arrayQuery = JSON.stringify([`equal("email", "${emailInserita}")`]);
-        const queryCodificata = encodeURIComponent(arrayQuery);
-
-        // Usiamo l'endpoint delle sessioni ma SENZA credentials: "include" per non far scattare il blocco del browser
-        fetch(`${ENDPOINT}/account/sessions/email`, {
-            method: "POST",
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`, {
+            method: "GET",
             mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({ email: emailInserita, password: passwordInserita })
+            headers: { "X-Appwrite-Project": PROJECT_ID }
         })
         .then(res => res.json())
-        .then(sessionData => {
-            if (sessionData.code && sessionData.code >= 400) {
-                alert("❌ ACCESSO NEGATO: Credenziali non valide o password errata!");
+        .then(data => {
+            if (data.documents && data.documents.length > 0) {
+                nicknameCorrente = data.documents[0].nickname;
             } else {
-                // Se la password è corretta, estraiamo l'account per leggerne il Nickname (usando il token della sessione appena creata)
-                fetch(`${ENDPOINT}/account`, {
-                    method: "GET",
+                nicknameCorrente = ottieniNomeDispositivo();
+            }
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
+            caricaMessaggi();
+        })
+        .catch(() => {
+            nicknameCorrente = ottieniNomeDispositivo();
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
+            caricaMessaggi();
+        });
+    }
+
+    function eseguiComandoWhoami(testo) {
+        const parametri = testo.substring(8).trim().split(' ');
+        const nuovoNome = parametri[0] ? parametri[0].trim() : "";
+        const passwordInserita = parametri[1] ? parametri[1].trim() : "";
+
+        if (!nuovoNome || !passwordInserita) {
+            alert("⚠️ Errore sintassi! Usa il comando così: /whoami Nome Password");
+            return;
+        }
+
+        const arrayQuery = [`equal("nickname", "${nuovoNome}")`];
+        const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`, {
+            method: "GET",
+            mode: "cors",
+            headers: { "X-Appwrite-Project": PROJECT_ID }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.documents && data.documents.length > 0) {
+                const profiloTrovato = data.documents[0];
+                
+                if (profiloTrovato.password === passwordInserita) {
+                    nicknameCorrente = nuovoNome;
+                    document.getElementById("nome-badge").innerText = nuovoNome;
+                    alert("🔓 Autenticazione riuscita: " + nuovoNome);
+                } else {
+                    alert("❌ ACCESSO NEGATO: Password errata per l'utente '" + nuovoNome + "'");
+                }
+            } else {
+                fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
+                    method: "POST",
                     mode: "cors",
-                    headers: { 
-                        "X-Appwrite-Project": PROJECT_ID,
-                        "Authorization": `Bearer ${sessionData.secret}` // Passiamo il token direttamente nell'header per saltare i cookie!
-                    }
+                    headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
+                    body: JSON.stringify({
+                        documentId: "unique()",
+                        data: { email: emailUtenteFittizia, nickname: nuovoNome, password: passwordInserita }
+                    })
                 })
-                .then(userRes => userRes.json())
-                .then(user => {
-                    const nomeReale = user.name || emailInserita.split('@')[0];
-                    nicknameCorrente = nomeReale;
-                    localStorage.setItem("appwrite_userName", nomeReale);
-                    document.getElementById("nome-badge").innerText = nomeReale;
-                    alert("🔓 Identità confermata! Benvenuto " + nomeReale);
+                .then(() => {
+                    nicknameCorrente = nuovoNome;
+                    document.getElementById("nome-badge").innerText = nuovoNome;
+                    alert("🆕 Nuovo profilo registrato e protetto!");
                 });
             }
         })
         .catch(() => {
-            alert("Il server Appwrite ha rifiutato la richiesta per motivi di sicurezza CORS.");
+            alert("Errore durante la verifica del nome.");
         });
     }
 
@@ -131,7 +144,7 @@ div>
             "1. Rispetto reciproco: non insultare gli altri studenti.\n" +
             "2. No Spam: non inondare la chat di messaggi ripetitivi.\n" +
             "3. Contenuti appropriati: usa la chat solo per questioni scolastiche.\n" +
-            "4. Cambio Account sicuro: usa /whoami Email Password per identificarti.\n\n" +
+            "4. Identità protetta: assegna una password con /whoami Nome Password.\n\n" +
             "I comandi che iniziano con (/) sono invisibili agli altri utenti.";
             
         alert(elencoRegole);
@@ -189,6 +202,11 @@ div>
         if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
             mostraRegoleChat();
             campo.value = "";
+            return;
+        }
+
+        if (nicknameCorrente === "Android" || nicknameCorrente === "iPhone" || nicknameCorrente === "iPad" || nicknameCorrente === "Mac" || nicknameCorrente === "Dispositivo PC" || nicknameCorrente === "Studente") {
+            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami Nome Password");
             return;
         }
 
