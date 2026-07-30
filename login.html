@@ -35,9 +35,17 @@
     <div id="successo" class="success-msg"></div>
 </div>
 
+<script src="https://jsdelivr.net"></script>
+
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+
+    
+    const client = new Appwrite.Client();
+    client.setEndpoint(ENDPOINT).setProject(PROJECT_ID);
+    
+    const account = new Appwrite.Account(client);
 
     function inviaDatiAppwrite(azione) {
         const nickname = document.getElementById('nickname').value.trim();
@@ -74,34 +82,15 @@
                 return;
             }
 
-            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
-            fetch(ENDPOINT + "/account", {
-                method: "POST",
-                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Appwrite-Project": PROJECT_ID
-                },
-                body: JSON.stringify({
-                    userId: "unique()",
-                    email: email,
-                    password: password,
-                    name: nickname
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.code && data.code >= 400) {
-                    erroreDiv.style.color = "#dc3545";
-                    erroreDiv.innerText = "Errore: " + data.message;
-                } else {
+            account.create('unique()', email, password, nickname)
+                .then(() => {
+                    
                     eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
-                }
-            })
-            .catch(() => {
-                erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "oh uh! il server non risponde alla registrazione.";
-            });
+                })
+                .catch((error) => {
+                    erroreDiv.style.color = "#dc3545";
+                    erroreDiv.innerText = "Errore registrazione: " + error.message;
+                });
 
         } else if (azione === 'accedi') {
             eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
@@ -109,42 +98,21 @@
     }
 
     function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
-        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
-        fetch(ENDPOINT + "/account/sessions/email", {
-            method: "POST",
-            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.code && data.code >= 400) {
-                erroreDiv.style.color = "#dc3545";
-                erroreDiv.innerText = "Dati errati o utente non trovato.";
-            } else {
-                localStorage.setItem("utenteLoggato", "true");
+        
+        account.createEmailPasswordSession(email, password)
+            .then(() => {
                 erroreDiv.style.display = "none";
-                
-                successoDiv.innerText = " Accesso confermato! Entrando...";
+                successoDiv.innerText = "Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
                 setTimeout(function() {
-                    window.location.replace("index.html?v=" + Date.now());
+                    window.location.replace("chat.html?v=" + Date.now());
                 }, 1200);
-            }
-        })
-        .catch(() => {
-            erroreDiv.style.color = "#dc3545";
-            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
-        });
+            })
+            .catch((error) => {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Dati errati o errore di rete.";
+                console.error(error);
+            });
     }
 </script>
-
-</body>
-</html>
