@@ -86,29 +86,37 @@
         });
     }
 
-    function eseguiComandoWhoami(testo) {
+function eseguiComandoWhoami(testo) {
     const parametri = testo.substring(8).trim().split(' ');
     const nuovoNome = parametri[0] ? parametri[0].trim() : "";
     const passwordInserita = parametri[1] ? parametri[1].trim() : "";
 
     if (!nuovoNome || !passwordInserita) {
-        alert("⚠️ Errore sintassi! Usa il comando così: /whoami Nome Password");
+        alert("⚠️ Usa il comando così: /whoami Nome Password");
         return;
     }
 
     const arrayQuery = [`equal("nickname", "${nuovoNome}")`];
     const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
+    const urlCompleto = `${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`;
 
-    fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`, {
+    fetch(urlCompleto, {
         method: "GET",
         mode: "cors",
         headers: { "X-Appwrite-Project": PROJECT_ID }
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            // Se Appwrite risponde con un errore (es. 401, 403, 404), lo mostra a schermo
+            alert("Errore Server Appwrite: Status " + res.status);
+        }
+        return res.json();
+    })
     .then(data => {
-        // CORREZIONE: Controlliamo se la lista contiene almeno un profilo
+        // Ci mostra in un pop-up quanti documenti ha trovato il database
+        alert("Documenti trovati nel DB: " + (data.documents ? data.documents.length : "0"));
+
         if (data.documents && data.documents.length > 0) {
-            // CORREZIONE: Prendiamo il PRIMO profilo della lista usando [0]
             const profiloTrovato = data.documents[0];
             
             if (profiloTrovato.password === passwordInserita) {
@@ -117,10 +125,10 @@
                 document.getElementById("nome-badge").innerText = nuovoNome;
                 alert("🔓 Autenticazione riuscita: " + nuovoNome);
             } else {
-                alert("❌ ACCESSO NEGATO: Password errata per l'utente '" + nuovoNome + "'");
+                alert("❌ Password errata per l'utente: " + nuovoNome);
             }
         } else {
-            // Se il nickname non esiste, creiamo il nuovo record
+            // Se non esiste, tenta la creazione
             fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
                 method: "POST",
                 mode: "cors",
@@ -137,16 +145,22 @@
                     }
                 })
             })
-            .then(() => {
-                nicknameCorrente = nuovoNome;
-                localStorage.setItem("appwrite_userName", nuovoNome);
-                document.getElementById("nome-badge").innerText = nuovoNome;
-                alert("🆕 Nuovo profilo registrato e protetto con la tua password!");
+            .then(resPost => resPost.json())
+            .then(dataPost => {
+                if (dataPost.code && dataPost.code >= 400) {
+                    alert("Errore creazione profilo: " + dataPost.message);
+                } else {
+                    nicknameCorrente = nuovoNome;
+                    localStorage.setItem("appwrite_userName", nuovoNome);
+                    document.getElementById("nome-badge").innerText = nuovoNome;
+                    alert("🆕 Nuovo profilo registrato!");
+                }
             });
         }
     })
-    .catch(() => {
-        alert("Errore durante la verifica del nome sul database.");
+    .catch((err) => {
+        // Se c'è un errore di sintassi JavaScript o di rete puro, lo lancia qui
+        alert("Errore di blocco codice/rete: " + err.message);
     });
 }
 
