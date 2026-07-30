@@ -34,21 +34,21 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Metti il tuo nickname/o un nome con cui ti identifichi scrivendo /whoami iltuonickname(quindi ad es.:/whoami KernelZam) per scrivere..." onkeypress="controllaInvio(event)">
-
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Nome Password" onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
+
+
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+    const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
-    const PROFILI_COLLECTION_ID = "profili";
+    const PROFILI_COLLECTION_ID = "profili"; 
 
     let nicknameCorrente = "Studente";
-    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; // Usata come chiave per recuperare il profilo
+    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; 
 
-    // Rileva il dispositivo di riserva
     function ottieniNomeDispositivo() {
         const stringaBrowser = navigator.userAgent.toLowerCase();
         if (stringaBrowser.includes("ipad")) return "iPad";
@@ -58,12 +58,13 @@
         return "Dispositivo PC";
     }
 
-    // Carica il profilo memorizzato su Appwrite per questo specifico dispositivo
     function scaricaProfiloDaServer() {
-        // Generiamo una stringa univoca per il dispositivo basata sull'UserAgent per simulare un identificativo
         emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
 
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
+        const arrayQuery = [`equal("email", "${emailUtenteFittizia}")`];
+        const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`, {
             method: "GET",
             mode: "cors",
             headers: { "X-Appwrite-Project": PROJECT_ID }
@@ -71,10 +72,8 @@
         .then(res => res.json())
         .then(data => {
             if (data.documents && data.documents.length > 0) {
-                // Se c'è un profilo salvato nel database, usa quel nickname
                 nicknameCorrente = data.documents[0].nickname;
             } else {
-                // Altrimenti imposta il nome dispositivo standard
                 nicknameCorrente = ottieniNomeDispositivo();
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
@@ -87,46 +86,94 @@
         });
     }
 
-    // Gestisce il comando /whoami in modo invisibile salvandolo su Appwrite
-    function eseguiComandoWhoami(testo) {
-        const nuovoNome = testo.substring(8).trim();
-        if (!nuovoNome) return;
+function eseguiComandoWhoami(testo) {
+    const parametri = testo.substring(8).trim().split(' ');
+    const nuovoNome = parametri[0] ? parametri[0].trim() : "";
+    const passwordInserita = parametri[1] ? parametri[1].trim() : "";
 
-        // Cambia la grafica locale all'istante
-        nicknameCorrente = nuovoNome;
-        document.getElementById("nome-badge").innerText = nuovoNome;
+    if (!nuovoNome || !passwordInserita) {
+        alert("⚠️ Usa il comando così: /whoami Nome Password");
+        return;
+    }
 
-        // Controlla se esiste già un record per aggiornarlo o crearlo da zero
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
-            method: "GET",
-            mode: "cors",
-            headers: { "X-Appwrite-Project": PROJECT_ID }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.documents && data.documents.length > 0) {
-                // Aggiorna esistente (PUT)
-                const docId = data.documents[0].$id;
-                fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents/${docId}`, {
-                    method: "PATCH",
-                    mode: "cors",
-                    headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-                    body: JSON.stringify({ data: { nickname: nuovoNome } })
-                });
+    const arrayQuery = [`equal("nickname", "${nuovoNome}")`];
+    const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
+    const urlCompleto = `${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`;
+
+    fetch(urlCompleto, {
+        method: "GET",
+        mode: "cors",
+        headers: { "X-Appwrite-Project": PROJECT_ID }
+    })
+    .then(res => {
+        if (!res.ok) {
+            // Se Appwrite risponde con un errore (es. 401, 403, 404), lo mostra a schermo
+            alert("Errore Server Appwrite: Status " + res.status);
+        }
+        return res.json();
+    })
+    .then(data => {
+        // Ci mostra in un pop-up quanti documenti ha trovato il database
+        alert("Documenti trovati nel DB: " + (data.documents ? data.documents.length : "0"));
+
+        if (data.documents && data.documents.length > 0) {
+            const profiloTrovato = data.documents[0];
+            
+            if (profiloTrovato.password === passwordInserita) {
+                nicknameCorrente = nuovoNome;
+                localStorage.setItem("appwrite_userName", nuovoNome);
+                document.getElementById("nome-badge").innerText = nuovoNome;
+                alert("🔓 Autenticazione riuscita: " + nuovoNome);
             } else {
-                // Crea nuovo record (POST)
-                fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
-                    method: "POST",
-                    mode: "cors",
-                    headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-                    body: JSON.stringify({
-                        documentId: "unique()",
-                        data: { email: emailUtenteFittizia, nickname: nuovoNome }
-                    })
-                });
+                alert("❌ Password errata per l'utente: " + nuovoNome);
             }
-        })
-        .catch(err => console.error("Errore salvataggio profilo cloud:", err));
+        } else {
+            // Se non esiste, tenta la creazione
+            fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
+                method: "POST",
+                mode: "cors",
+                headers: { 
+                    "Content-Type": "application/json", 
+                    "X-Appwrite-Project": PROJECT_ID 
+                },
+                body: JSON.stringify({
+                    documentId: "unique()",
+                    data: { 
+                        email: emailUtenteFittizia, 
+                        nickname: nuovoNome, 
+                        password: passwordInserita 
+                    }
+                })
+            })
+            .then(resPost => resPost.json())
+            .then(dataPost => {
+                if (dataPost.code && dataPost.code >= 400) {
+                    alert("Errore creazione profilo: " + dataPost.message);
+                } else {
+                    nicknameCorrente = nuovoNome;
+                    localStorage.setItem("appwrite_userName", nuovoNome);
+                    document.getElementById("nome-badge").innerText = nuovoNome;
+                    alert("🆕 Nuovo profilo registrato!");
+                }
+            });
+        }
+    })
+    .catch((err) => {
+        // Se c'è un errore di sintassi JavaScript o di rete puro, lo lancia qui
+        alert("Errore di blocco codice/rete: " + err.message);
+    });
+}
+
+    function mostraRegoleChat() {
+        const elencoRegole = 
+            "REGOLE DI CHATVVELOCE \n\n" +
+            "1. Niente Volgarita: non usare un linguaggio scurrile.\n" +
+            "2. No Spam: non inondare la chat di messaggi ripetitivi.\n" +
+            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/argomenti riferiti almeno un pochino alla scuola.\n" +
+            "4. Identità protetta: assegna una password con /whoami Nome Password.\n\n" +
+            "I comandi che iniziano con (/) sono invisibili agli altri utenti.";
+            
+        alert(elencoRegole);
     }
 
     function caricaMessaggi() {
@@ -163,69 +210,57 @@
                 box.scrollTop = box.scrollHeight;
             }
         })
-        .catch(err => console.error("Errore lettura messaggi:", err));
+        .catch(err => console.error(err));
     }
 
-function inviaMessaggio() {
-    const campo = document.getElementById("campo-messaggio");
-    const testoMessaggio = campo.value.trim();
+    function inviaMessaggio() {
+        const campo = document.getElementById("campo-messaggio");
+        const testoMessaggio = campo.value.trim();
 
-    if (!testoMessaggio) return;
+        if (!testoMessaggio) return;
 
-    // --- CONTROLLO INVISIBILE AIUTANTE ---
-    // Se l'utente sta scrivendo un comando per darsi il nome, lo facciamo passare sempre!
-    if (testoMessaggio.startsWith('/whoami ')) {
-        eseguiComandoWhoami(testoMessaggio);
-        campo.value = "";
-        return;
-    }
+        if (testoMessaggio.startsWith('/whoami ')) {
+            eseguiComandoWhoami(testoMessaggio);
+            campo.value = "";
+            return;
+        }
 
-    if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
-        mostraRegoleChat();
-        campo.value = "";
-        return;
-    }
+        if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
+            mostraRegoleChat();
+            campo.value = "";
+            return;
+        }
 
-    // --- BLOCCO SCRITTURA PER UTENTI SENZA NOME ---
-    // Se l'utente ha ancora il nome di default del telefono, blocchiamo l'invio
-    if (nicknameCorrente === "Android" || 
-        nicknameCorrente === "iPhone" || 
-        nicknameCorrente === "iPad" || 
-        nicknameCorrente === "Mac" || 
-        nicknameCorrente === "Dispositivo PC" || 
-        nicknameCorrente === "Studente" ||
-        nicknameCorrente === "...") {
-        
-        alert("⚠️ Per poter inviare messaggi devi prima impostare un nome protetto!\n\nUsa il comando: /whoami Nome Password");
-        return; // Interrompe la funzione: il messaggio NON viene inviato a Appwrite
-    }
+        if (nicknameCorrente === "Android" || nicknameCorrente === "iPhone" || nicknameCorrente === "iPad" || nicknameCorrente === "Mac" || nicknameCorrente === "Dispositivo PC" || nicknameCorrente === "Studente") {
+            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami Nome Password");
+            return;
+        }
 
-    // Se ha un nome valido, il codice prosegue normalmente inviando il messaggio
-    fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
-        method: "POST",
-        mode: "cors",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Appwrite-Project": PROJECT_ID,
-            "X-SDK-Name": "Web",
-            "X-SDK-Version": "14.0.0"
-        },
-        body: JSON.stringify({
-            documentId: "unique()",
-            data: {
-                testo: testoMessaggio,
-                autore: nicknameCorrente, 
-                ora: Date.now() 
-            }
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID,
+                "X-SDK-Name": "Web",
+                "X-SDK-Version": "14.0.0"
+            },
+            body: JSON.stringify({
+                documentId: "unique()",
+                data: {
+                    testo: testoMessaggio,
+                    autore: nicknameCorrente, 
+                    ora: Date.now() 
+                }
+            })
         })
-    })
-    .then(res => res.json())
-    .then(() => {
-        campo.value = ""; 
-        caricaMessaggi(); 
-    })
-    .catch(() => alert("Errore di invio. Blame Kernel."));
-}
+        .then(res => res.json())
+        .then(() => {
+            campo.value = ""; 
+            caricaMessaggi(); 
+        })
+        .catch(() => alert("Errore di invio. Blame Kernel."));
+    }
 
     function controllaInvio(e) {
         if (e.key === 'Enter') {
@@ -235,18 +270,6 @@ function inviaMessaggio() {
 
     scaricaProfiloDaServer();
     setInterval(caricaMessaggi, 3000);
-    function mostraRegoleChat() {
-    const elencoRegole = 
-        "REGOLE DI VVCHAT!\n\n" +
-        "1. Non insultare qualcuno/Non dire parolacce/bestemmie(parole volgari).  Può comportare da warning a perma-ban dalla chat(in base alla gravità).\n" +
-        "2. Niente Spam: non inondare la chat di messaggi ripetitivi.  Da warning a ban\n" +
-        "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/discussioni riferite alla scuola. Warning\n" +
-        "4. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.\n\n" +
-        "Usa /(commando) per eseguire commandi(/whoami,/rules)";
-        
-    alert(elencoRegole);
-}
-
 </script>
 </body>
 </html>
