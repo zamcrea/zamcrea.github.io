@@ -34,19 +34,18 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Nome Password" onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Email Password" onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
+div>
 
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
-    const PROFILI_COLLECTION_ID = "profili"; 
 
     let nicknameCorrente = "Studente";
-    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; 
 
     function ottieniNomeDispositivo() {
         const stringaBrowser = navigator.userAgent.toLowerCase();
@@ -58,17 +57,27 @@
     }
 
     function scaricaProfiloDaServer() {
-        emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
+        // Se nel login abbiamo salvato il nome in locale, usiamo quello all'avvio rapido
+        const localeNick = localStorage.getItem("appwrite_userName");
+        if (localeNick) {
+            nicknameCorrente = localeNick;
+            document.getElementById("nome-badge").innerText = nicknameCorrente;
+            caricaMessaggi();
+            return;
+        }
 
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
+        // Altrimenti interroga Appwrite via Account Session (se i cookie reggono)
+        fetch(`${ENDPOINT}/account`, {
             method: "GET",
             mode: "cors",
+            credentials: "include",
             headers: { "X-Appwrite-Project": PROJECT_ID }
         })
         .then(res => res.json())
-        .then(data => {
-            if (data.documents && data.documents.length > 0) {
-                nicknameCorrente = data.documents[0].nickname;
+        .then(user => {
+            if (user && user.name && user.name.trim() !== "") {
+                nicknameCorrente = user.name;
+                localStorage.setItem("appwrite_userName", user.name);
             } else {
                 nicknameCorrente = ottieniNomeDispositivo();
             }
@@ -84,61 +93,69 @@
 
     function eseguiComandoWhoami(testo) {
         const parametri = testo.substring(8).trim().split(' ');
-        const nuovoNome = parametri[0] ? parametri[0].trim() : "";
+        const emailInserita = parametri[0] ? parametri[0].trim() : "";
         const passwordInserita = parametri[1] ? parametri[1].trim() : "";
 
-        if (!nuovoNome || !passwordInserita) {
-            alert("⚠️ Errore sintassi! Usa il comando così: /whoami Nome Password");
+        if (!emailInserita || !passwordInserita) {
+            alert("⚠️ Errore sintassi! Usa il comando così:\n/whoami email@scuola.it password");
             return;
         }
 
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("nickname", "${nuovoNome}")`, {
-            method: "GET",
+        // Chiude la vecchia sessione prima di tentare il nuovo login in chat
+        fetch(`${ENDPOINT}/account/sessions/current`, {
+            method: "DELETE",
             mode: "cors",
+            credentials: "include",
             headers: { "X-Appwrite-Project": PROJECT_ID }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.documents && data.documents.length > 0) {
-                const profiloTrovato = data.documents[0];
-                
-                if (profiloTrovato.password === passwordInserita) {
-                    nicknameCorrente = nuovoNome;
-                    document.getElementById("nome-badge").innerText = nuovoNome;
-                    alert("🔓 Autenticazione riuscita: " + nuovoNome);
+        .finally(() => {
+            // Tenta il login reale sulla sezione Auth con email e password fornite
+            fetch(`${ENDPOINT}/account/sessions/email`, {
+                method: "POST",
+                mode: "cors",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({ email: emailInserita, password: passwordInserita })
+            })
+            .then(res => res.json())
+            .then(sessionData => {
+                if (sessionData.code && sessionData.code >= 400) {
+                    alert("❌ ACCESSO NEGATO: Credenziali Auth non valide o password errata!");
                 } else {
-                    alert("❌ ACCESSO NEGATO: Password errata per l'utente '" + nuovoNome + "'");
-                }
-            } else {
-                fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
-                    method: "POST",
-                    mode: "cors",
-                    headers: { "Content-Type": "application/json", "X-Appwrite-Project": PROJECT_ID },
-                    body: JSON.stringify({
-                        documentId: "unique()",
-                        data: { email: emailUtenteFittizia, nickname: nuovoNome, password: passwordInserita }
+                    // Se le credenziali sono giuste, scarica subito il Nickname reale registrato
+                    fetch(`${ENDPOINT}/account`, {
+                        method: "GET",
+                        mode: "cors",
+                        credentials: "include",
+                        headers: { "X-Appwrite-Project": PROJECT_ID }
                     })
-                })
-                .then(() => {
-                    nicknameCorrente = nuovoNome;
-                    document.getElementById("nome-badge").innerText = nuovoNome;
-                    alert("🆕 Nuovo profilo registrato e protetto!");
-                });
-            }
-        })
-        .catch(() => {
-            alert("Errore di rete durante la verifica del nome.");
+                    .then(userRes => userRes.json())
+                    .then(user => {
+                        const nomeReale = user.name || emailInserita.split('@')[0];
+                        nicknameCorrente = nomeReale;
+                        localStorage.setItem("appwrite_userName", nomeReale);
+                        document.getElementById("nome-badge").innerText = nomeReale;
+                        alert("🔓 Identità confermata! Ora sei connesso come: " + nomeReale);
+                    });
+                }
+            })
+            .catch(() => {
+                alert("Errore di rete durante la verifica Auth.");
+            });
         });
     }
 
     function mostraRegoleChat() {
         const elencoRegole = 
-            "📜 REGOLAMENTO DI CHATVVELOCE 📜\n\n" +
-            "1. Rispetto reciproco: non insultare gli altri studenti.\n" +
+            " REGOLAMENTO DI CHATVVELOCE \n\n" +
+            "1. Non essere volgare: non scrivere parolacce/bestemmie.\n" +
             "2. No Spam: non inondare la chat di messaggi ripetitivi.\n" +
-            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche.\n" +
-            "4. Identità protetta: assegna una password con /whoami Nome Password.\n\n" +
-            "I comandi che iniziano con (/) sono invisibili agli altri utenti.";
+            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/argomenti che centrano almeno un pochino con la scuola.\n" +
+            "4. Accesso sicuro: usa /whoami Email Password per identificarti.\n\n" +
+            "Nota:I comandi che iniziano con (/) sono invisibili agli altri utenti.";
             
         alert(elencoRegole);
     }
@@ -198,11 +215,6 @@
             return;
         }
 
-        if (nicknameCorrente === "Android" || nicknameCorrente === "iPhone" || nicknameCorrente === "iPad" || nicknameCorrente === "Mac" || nicknameCorrente === "Dispositivo PC" || nicknameCorrente === "Studente") {
-            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami Nome Password");
-            return;
-        }
-
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
             method: "POST",
             mode: "cors",
@@ -240,3 +252,4 @@
 </script>
 </body>
 </html>
+
