@@ -15,11 +15,12 @@
         .orario { font-size: 0.65em; color: #666; float: right; margin-top: 5px; margin-left: 10px; }
         .input-area { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
         .input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; box-sizing: border-box; font-size: 1em; outline: none; }
-        .input-area button { background: #06911b; color: white; border: none; padding: 0 20px; border-radius: 20px; font-size: 1em; font-weight: bold; cursor: pointer; }
+        .input-area button { background: #007bff; color: white; border: none; padding: 0 20px; border-radius: 20px; font-size: 1em; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 <script>
+    // nuh uh not so fast
     if (localStorage.getItem("utenteLoggato") !== "true") {
         window.location.replace("login.html");
     }
@@ -34,92 +35,68 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami email" onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio per la classe..." onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
 
-
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
-    const PROFILI_COLLECTION_ID = "profili"; 
 
     let nicknameCorrente = "Studente";
-    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; 
 
-    function ottieniNomeDispositivo() {
+        // RECUPERA IL NOME: Prova prima sul server, poi nella memoria
+        function recuperaProfiloServer() {
+        const jwtToken = localStorage.getItem("appwriteJWT");
+
+        // 1. Rileva in automatico il tipo di dispositivo
+        let nomeDispositivo = "Dispositivo PC";
         const stringaBrowser = navigator.userAgent.toLowerCase();
-        if (stringaBrowser.includes("ipad")) return "iPad";
-        if (stringaBrowser.includes("iphone")) return "iPhone";
-        if (stringaBrowser.includes("android")) return "Android";
-        if (stringaBrowser.includes("macintosh")) return "Mac";
-        return "Dispositivo PC";
-    }
+        
+        if (stringaBrowser.includes("ipad")) {
+            nomeDispositivo = "iPad";
+        } else if (stringaBrowser.includes("iphone")) {
+            nomeDispositivo = "iPhone";
+        } else if (stringaBrowser.includes("android")) {
+            nomeDispositivo = "Android";
+        } else if (stringaBrowser.includes("macintosh")) {
+            nomeDispositivo = "Mac";
+        }
 
-    function scaricaProfiloDaServer() {
-        emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
+        let intestazioni = {
+            "X-Appwrite-Project": PROJECT_ID,
+            "X-SDK-Name": "Web",
+            "X-SDK-Version": "14.0.0"
+        };
+        if (jwtToken) { intestazioni["X-Appwrite-JWT"] = jwtToken; }
 
-        const arrayQuery = [`equal("email", "${emailUtenteFittizia}")`];
-        const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
-
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`, {
+        fetch(`${ENDPOINT}/account`, {
             method: "GET",
             mode: "cors",
-            headers: { "X-Appwrite-Project": PROJECT_ID }
+            headers: intestazioni
         })
         .then(res => res.json())
-        .then(data => {
-            if (data.documents && data.documents.length > 0) {
-                nicknameCorrente = data.documents[0].nickname;
+        .then(user => {
+            // 2. Se il cloud risponde con un nome reale, usa quello!
+            if (user && user.name && user.name.trim() !== "") {
+                nicknameCorrente = user.name;
             } else {
-                nicknameCorrente = ottieniNomeDispositivo();
+                // 3. RISERVA: Se il server è vuoto, assegna il nome del dispositivo
+                nicknameCorrente = nomeDispositivo;
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         })
         .catch(() => {
-            nicknameCorrente = ottieniNomeDispositivo();
+            // 4. RISERVA ANCHE SE SALTA LA RETE
+            nicknameCorrente = nomeDispositivo;
             document.getElementById("nome-badge").innerText = nicknameCorrente;
             caricaMessaggi();
         });
     }
 
-function eseguiComandoWhoami(testo) {
-    // Prende tutto il testo dopo "/whoami " (es. "mario@gmail.com")
-    const emailInserita = testo.substring(8).trim();
-
-    // Controllo base che ci sia una chiocciola
-    if (!emailInserita || !emailInserita.includes('@')) {
-        alert("⚠️ Inserisci un'email valida! Esempio: /whoami nome@scuola.it");
-        return;
-    }
-
-    // TRUCCO: Estraiamo il nome prima della @ (es. da "mario@gmail.com" prende "mario")
-    const pezzettiEmail = emailInserita.split('@');
-    const nicknameEstratto = pezzettiEmail[0];
-
-    // Cambiamo l'identità all'istante sia in memoria che sullo schermo
-    nicknameCorrente = nicknameEstratto;
-    localStorage.setItem("appwrite_userName", nicknameEstratto);
-    document.getElementById("nome-badge").innerText = nicknameEstratto;
-
-    alert("🔓 Identità aggiornata! Ora sei connesso come: " + nicknameEstratto);
-}
-
-
-    function mostraRegoleChat() {
-        const elencoRegole = 
-            "📜 REGOLAMENTO DI CHATVVELOCE 📜\n\n" +
-            "1. Rispetto reciproco: non insultare gli altri studenti.\n" +
-            "2. No Spam: non inondare la chat di messaggi ripetitivi.\n" +
-            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche.\n" +
-            "4. Identità protetta: assegna una password con /whoami Nome Password.\n\n" +
-            "I comandi che iniziano con (/) sono invisibili agli altri utenti.";
-            
-        alert(elencoRegole);
-    }
 
     function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
@@ -155,7 +132,7 @@ function eseguiComandoWhoami(testo) {
                 box.scrollTop = box.scrollHeight;
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => console.error("Errore lettura messaggi:", err));
     }
 
     function inviaMessaggio() {
@@ -163,23 +140,6 @@ function eseguiComandoWhoami(testo) {
         const testoMessaggio = campo.value.trim();
 
         if (!testoMessaggio) return;
-
-        if (testoMessaggio.startsWith('/whoami ')) {
-            eseguiComandoWhoami(testoMessaggio);
-            campo.value = "";
-            return;
-        }
-
-        if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
-            mostraRegoleChat();
-            campo.value = "";
-            return;
-        }
-
-        if (nicknameCorrente === "Android" || nicknameCorrente === "iPhone" || nicknameCorrente === "iPad" || nicknameCorrente === "Mac" || nicknameCorrente === "Dispositivo PC" || nicknameCorrente === "Studente") {
-            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami email");
-            return;
-        }
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
             method: "POST",
@@ -200,11 +160,11 @@ function eseguiComandoWhoami(testo) {
             })
         })
         .then(res => res.json())
-        .then(() => {
+        .then(data => {
             campo.value = ""; 
             caricaMessaggi(); 
         })
-        .catch(() => alert("Errore di invio. Blame Kernel."));
+        .catch(err => alert("Errore di invio. Sembra che qualcuno abbia toccato qualcosa di sbagliato!Blame Kernel."));
     }
 
     function controllaInvio(e) {
@@ -213,8 +173,17 @@ function eseguiComandoWhoami(testo) {
         }
     }
 
-    scaricaProfiloDaServer();
+    recuperaProfiloServer();
     setInterval(caricaMessaggi, 3000);
 </script>
+
+<script>
+    // nuh uh not so fast
+    if (localStorage.getItem("utenteLoggato") !== "true") {
+        window.location.replace("login.html");
+    }
+</script>
+
+
 </body>
 </html>
