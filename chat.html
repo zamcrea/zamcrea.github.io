@@ -57,7 +57,6 @@ div>
     }
 
     function scaricaProfiloDaServer() {
-        // Se nel login abbiamo salvato il nome in locale, usiamo quello all'avvio rapido
         const localeNick = localStorage.getItem("appwrite_userName");
         if (localeNick) {
             nicknameCorrente = localeNick;
@@ -65,32 +64,12 @@ div>
             caricaMessaggi();
             return;
         }
-
-        // Altrimenti interroga Appwrite via Account Session (se i cookie reggono)
-        fetch(`${ENDPOINT}/account`, {
-            method: "GET",
-            mode: "cors",
-            credentials: "include",
-            headers: { "X-Appwrite-Project": PROJECT_ID }
-        })
-        .then(res => res.json())
-        .then(user => {
-            if (user && user.name && user.name.trim() !== "") {
-                nicknameCorrente = user.name;
-                localStorage.setItem("appwrite_userName", user.name);
-            } else {
-                nicknameCorrente = ottieniNomeDispositivo();
-            }
-            document.getElementById("nome-badge").innerText = nicknameCorrente;
-            caricaMessaggi();
-        })
-        .catch(() => {
-            nicknameCorrente = ottieniNomeDispositivo();
-            document.getElementById("nome-badge").innerText = nicknameCorrente;
-            caricaMessaggi();
-        });
+        nicknameCorrente = ottieniNomeDispositivo();
+        document.getElementById("nome-badge").innerText = nicknameCorrente;
+        caricaMessaggi();
     }
 
+    // NUOVA LOGICA: Autenticazione sicura tramite Header Progetto (Senza Cookie/CORS)
     function eseguiComandoWhoami(testo) {
         const parametri = testo.substring(8).trim().split(' ');
         const emailInserita = parametri[0] ? parametri[0].trim() : "";
@@ -101,61 +80,59 @@ div>
             return;
         }
 
-        // Chiude la vecchia sessione prima di tentare il nuovo login in chat
-        fetch(`${ENDPOINT}/account/sessions/current`, {
-            method: "DELETE",
+        console.log("Verifica credenziali per: " + emailInserita);
+
+        // Creiamo la query codificata in formato array JSON accettato dalle API REST di Appwrite
+        const arrayQuery = JSON.stringify([`equal("email", "${emailInserita}")`]);
+        const queryCodificata = encodeURIComponent(arrayQuery);
+
+        // Usiamo l'endpoint delle sessioni ma SENZA credentials: "include" per non far scattare il blocco del browser
+        fetch(`${ENDPOINT}/account/sessions/email`, {
+            method: "POST",
             mode: "cors",
-            credentials: "include",
-            headers: { "X-Appwrite-Project": PROJECT_ID }
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({ email: emailInserita, password: passwordInserita })
         })
-        .finally(() => {
-            // Tenta il login reale sulla sezione Auth con email e password fornite
-            fetch(`${ENDPOINT}/account/sessions/email`, {
-                method: "POST",
-                mode: "cors",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Appwrite-Project": PROJECT_ID
-                },
-                body: JSON.stringify({ email: emailInserita, password: passwordInserita })
-            })
-            .then(res => res.json())
-            .then(sessionData => {
-                if (sessionData.code && sessionData.code >= 400) {
-                    alert("❌ ACCESSO NEGATO: Credenziali Auth non valide o password errata!");
-                } else {
-                    // Se le credenziali sono giuste, scarica subito il Nickname reale registrato
-                    fetch(`${ENDPOINT}/account`, {
-                        method: "GET",
-                        mode: "cors",
-                        credentials: "include",
-                        headers: { "X-Appwrite-Project": PROJECT_ID }
-                    })
-                    .then(userRes => userRes.json())
-                    .then(user => {
-                        const nomeReale = user.name || emailInserita.split('@')[0];
-                        nicknameCorrente = nomeReale;
-                        localStorage.setItem("appwrite_userName", nomeReale);
-                        document.getElementById("nome-badge").innerText = nomeReale;
-                        alert("🔓 Identità confermata! Ora sei connesso come: " + nomeReale);
-                    });
-                }
-            })
-            .catch(() => {
-                alert("Errore di rete durante la verifica Auth.");
-            });
+        .then(res => res.json())
+        .then(sessionData => {
+            if (sessionData.code && sessionData.code >= 400) {
+                alert("❌ ACCESSO NEGATO: Credenziali non valide o password errata!");
+            } else {
+                // Se la password è corretta, estraiamo l'account per leggerne il Nickname (usando il token della sessione appena creata)
+                fetch(`${ENDPOINT}/account`, {
+                    method: "GET",
+                    mode: "cors",
+                    headers: { 
+                        "X-Appwrite-Project": PROJECT_ID,
+                        "Authorization": `Bearer ${sessionData.secret}` // Passiamo il token direttamente nell'header per saltare i cookie!
+                    }
+                })
+                .then(userRes => userRes.json())
+                .then(user => {
+                    const nomeReale = user.name || emailInserita.split('@')[0];
+                    nicknameCorrente = nomeReale;
+                    localStorage.setItem("appwrite_userName", nomeReale);
+                    document.getElementById("nome-badge").innerText = nomeReale;
+                    alert("🔓 Identità confermata! Benvenuto " + nomeReale);
+                });
+            }
+        })
+        .catch(() => {
+            alert("Il server Appwrite ha rifiutato la richiesta per motivi di sicurezza CORS.");
         });
     }
 
     function mostraRegoleChat() {
         const elencoRegole = 
-            " REGOLAMENTO DI CHATVVELOCE \n\n" +
-            "1. Non essere volgare: non scrivere parolacce/bestemmie.\n" +
+            "📜 REGOLAMENTO DI CHATVVELOCE 📜\n\n" +
+            "1. Rispetto reciproco: non insultare gli altri studenti.\n" +
             "2. No Spam: non inondare la chat di messaggi ripetitivi.\n" +
-            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/argomenti che centrano almeno un pochino con la scuola.\n" +
-            "4. Accesso sicuro: usa /whoami Email Password per identificarti.\n\n" +
-            "Nota:I comandi che iniziano con (/) sono invisibili agli altri utenti.";
+            "3. Contenuti appropriati: usa la chat solo per questioni scolastiche.\n" +
+            "4. Cambio Account sicuro: usa /whoami Email Password per identificarti.\n\n" +
+            "I comandi che iniziano con (/) sono invisibili agli altri utenti.";
             
         alert(elencoRegole);
     }
@@ -252,4 +229,3 @@ div>
 </script>
 </body>
 </html>
-
