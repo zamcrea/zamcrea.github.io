@@ -34,7 +34,7 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami Nome Password" onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Scrivi un messaggio o /whoami email" onkeypress="controllaInvio(event)">
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
 
@@ -87,82 +87,27 @@
     }
 
 function eseguiComandoWhoami(testo) {
-    const parametri = testo.substring(8).trim().split(' ');
-    const nuovoNome = parametri[0] ? parametri[0].trim() : "";
-    const passwordInserita = parametri[1] ? parametri[1].trim() : "";
+    // Prende tutto il testo dopo "/whoami " (es. "mario@gmail.com")
+    const emailInserita = testo.substring(8).trim();
 
-    if (!nuovoNome || !passwordInserita) {
-        alert("⚠️ Usa il comando così: /whoami Nome Password");
+    // Controllo base che ci sia una chiocciola
+    if (!emailInserita || !emailInserita.includes('@')) {
+        alert("⚠️ Inserisci un'email valida! Esempio: /whoami nome@scuola.it");
         return;
     }
 
-    const arrayQuery = [`equal("nickname", "${nuovoNome}")`];
-    const queryCodificata = encodeURIComponent(JSON.stringify(arrayQuery));
-    const urlCompleto = `${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries=${queryCodificata}`;
+    // TRUCCO: Estraiamo il nome prima della @ (es. da "mario@gmail.com" prende "mario")
+    const pezzettiEmail = emailInserita.split('@');
+    const nicknameEstratto = pezzettiEmail[0];
 
-    fetch(urlCompleto, {
-        method: "GET",
-        mode: "cors",
-        headers: { "X-Appwrite-Project": PROJECT_ID }
-    })
-    .then(res => {
-        if (!res.ok) {
-            // Se Appwrite risponde con un errore (es. 401, 403, 404), lo mostra a schermo
-            alert("Errore Server Appwrite: Status " + res.status);
-        }
-        return res.json();
-    })
-    .then(data => {
-        // Ci mostra in un pop-up quanti documenti ha trovato il database
-        alert("Documenti trovati nel DB: " + (data.documents ? data.documents.length : "0"));
+    // Cambiamo l'identità all'istante sia in memoria che sullo schermo
+    nicknameCorrente = nicknameEstratto;
+    localStorage.setItem("appwrite_userName", nicknameEstratto);
+    document.getElementById("nome-badge").innerText = nicknameEstratto;
 
-        if (data.documents && data.documents.length > 0) {
-            const profiloTrovato = data.documents[0];
-            
-            if (profiloTrovato.password === passwordInserita) {
-                nicknameCorrente = nuovoNome;
-                localStorage.setItem("appwrite_userName", nuovoNome);
-                document.getElementById("nome-badge").innerText = nuovoNome;
-                alert("🔓 Autenticazione riuscita: " + nuovoNome);
-            } else {
-                alert("❌ Password errata per l'utente: " + nuovoNome);
-            }
-        } else {
-            // Se non esiste, tenta la creazione
-            fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
-                method: "POST",
-                mode: "cors",
-                headers: { 
-                    "Content-Type": "application/json", 
-                    "X-Appwrite-Project": PROJECT_ID 
-                },
-                body: JSON.stringify({
-                    documentId: "unique()",
-                    data: { 
-                        email: emailUtenteFittizia, 
-                        nickname: nuovoNome, 
-                        password: passwordInserita 
-                    }
-                })
-            })
-            .then(resPost => resPost.json())
-            .then(dataPost => {
-                if (dataPost.code && dataPost.code >= 400) {
-                    alert("Errore creazione profilo: " + dataPost.message);
-                } else {
-                    nicknameCorrente = nuovoNome;
-                    localStorage.setItem("appwrite_userName", nuovoNome);
-                    document.getElementById("nome-badge").innerText = nuovoNome;
-                    alert("🆕 Nuovo profilo registrato!");
-                }
-            });
-        }
-    })
-    .catch((err) => {
-        // Se c'è un errore di sintassi JavaScript o di rete puro, lo lancia qui
-        alert("Errore di blocco codice/rete: " + err.message);
-    });
+    alert("🔓 Identità aggiornata! Ora sei connesso come: " + nicknameEstratto);
 }
+
 
     function mostraRegoleChat() {
         const elencoRegole = 
@@ -232,7 +177,7 @@ function eseguiComandoWhoami(testo) {
         }
 
         if (nicknameCorrente === "Android" || nicknameCorrente === "iPhone" || nicknameCorrente === "iPad" || nicknameCorrente === "Mac" || nicknameCorrente === "Dispositivo PC" || nicknameCorrente === "Studente") {
-            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami Nome Password");
+            alert("⚠️ Devi assegnarti un nome protetto prima di scrivere! Usa: /whoami email");
             return;
         }
 
