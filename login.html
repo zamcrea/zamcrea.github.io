@@ -35,30 +35,9 @@
     <div id="successo" class="success-msg"></div>
 </div>
 
-<!-- Includi l'SDK ufficiale di Appwrite -->
-<script src="https://jsdelivr.net"></script>
-
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
-
-    // 1. SINTASSI CORRETTA PER CDN APPWRITE (Risolve il blocco dei tasti)
-    const { Client, Account } = Appwrite;
-    
-    const client = new Client();
-    client.setEndpoint(ENDPOINT).setProject(PROJECT_ID);
-    
-    const account = new Account(client);
-
-    // Controlla se l'utente ha già una sessione attiva all'avvio della pagina
-    account.get()
-        .then(() => {
-            // Se è già loggato, va direttamente alla home senza farlo aspettare
-            window.location.replace("index.html?v=" + Date.now());
-        })
-        .catch(() => {
-            console.log("Nessuna sessione attiva. Pronto per il login.");
-        });
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 
     function inviaDatiAppwrite(azione) {
         const nickname = document.getElementById('nickname').value.trim();
@@ -66,9 +45,6 @@
         const password = document.getElementById('password').value;
         const erroreDiv = document.getElementById('errore');
         const successoDiv = document.getElementById('successo');
-        
-        const btnAccedi = document.querySelector('.btn-accedi');
-        const btnRegistrati = document.querySelector('.btn-registrati');
 
         erroreDiv.style.display = "none";
         successoDiv.style.display = "none";
@@ -80,70 +56,95 @@
             return;
         }
 
-        // Mostra il caricamento e blocca i tasti per evitare clic multipli raddoppiati
-        erroreDiv.innerText = "Connessione al server in corso...";
+        erroreDiv.innerText = "Invio dati verso il server...";
         erroreDiv.style.color = "#666";
         erroreDiv.style.display = "block";
-        btnAccedi.disabled = true;
-        btnRegistrati.disabled = true;
 
         if (azione === 'registrati') {
             if (!nickname) {
-                erroreDiv.innerText = "Scegli un Nickname!";
+                erroreDiv.innerText = "Scegli un Nickname per entrare a far parte di questa comunita!";
                 erroreDiv.style.color = "#dc3545";
-                btnAccedi.disabled = false;
-                btnRegistrati.disabled = false;
+                erroreDiv.style.display = "block";
                 return;
             }
             if (password.length < 8) {
                 erroreDiv.innerText = "La password deve avere almeno 8 caratteri!";
                 erroreDiv.style.color = "#dc3545";
-                btnAccedi.disabled = false;
-                btnRegistrati.disabled = false;
+                erroreDiv.style.display = "block";
                 return;
             }
 
-            // Registrazione corretta via SDK
-            account.create('unique()', email, password, nickname)
-                .then(() => {
-                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv, btnAccedi, btnRegistrati);
+            // AGGIUNTA MODALITÀ CORS PER SBLOCCARE I SERVER DI FRANCOFORTE
+            fetch(ENDPOINT + "/account", {
+                method: "POST",
+                mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    userId: "unique()",
+                    email: email,
+                    password: password,
+                    name: nickname
                 })
-                .catch((error) => {
-                    btnAccedi.disabled = false;
-                    btnRegistrati.disabled = false;
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code && data.code >= 400) {
                     erroreDiv.style.color = "#dc3545";
-                    if (error.type === "user_already_exists") {
-                        erroreDiv.innerText = "Questo account esiste già! Clicca su Accedi.";
-                    } else {
-                        erroreDiv.innerText = "Errore: " + error.message;
-                    }
-                });
+                    erroreDiv.innerText = "Errore: " + data.message;
+                } else {
+                    eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
+                }
+            })
+            .catch(() => {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "oh uh! il server non risponde alla registrazione.";
+            });
 
         } else if (azione === 'accedi') {
-            eseguiSessioneLogin(email, password, erroreDiv, successoDiv, btnAccedi, btnRegistrati);
+            eseguiSessioneLogin(email, password, erroreDiv, successoDiv);
         }
     }
 
-    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv, btnAccedi, btnRegistrati) {
-        // Login corretto via SDK (Salva in automatico i cookie sul telefono/browser)
-        account.createEmailPasswordSession(email, password)
-            .then(() => {
+    function eseguiSessioneLogin(email, password, erroreDiv, successoDiv) {
+        // AGGIUNTA MODALITÀ CORS ANCHE SULL'ACCESSO
+        fetch(ENDPOINT + "/account/sessions/email", {
+            method: "POST",
+            mode: "cors", // <--- FORZA LO SBLOCCO RETE 
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.code && data.code >= 400) {
+                erroreDiv.style.color = "#dc3545";
+                erroreDiv.innerText = "Dati errati o utente non trovato.";
+            } else {
+                localStorage.setItem("utenteLoggato", "true");
                 erroreDiv.style.display = "none";
-                successoDiv.innerText = "Accesso confermato! Entrando...";
+                
+                successoDiv.innerText = " Accesso confermato! Entrando...";
                 successoDiv.style.display = "block";
                 
-                window.location.replace("index.html?v=" + Date.now());
-            })
-            .catch((error) => {
-                btnAccedi.disabled = false;
-                btnRegistrati.disabled = false;
-                erroreDiv.style.color = "#dc3545";
-                if (error.type === "user_invalid_credentials") {
-                    erroreDiv.innerText = "Email o password errate.";
-                } else {
-                    erroreDiv.innerText = "Errore di autenticazione di rete.";
-                }
-                console.error(error);
-            });
+                setTimeout(function() {
+                    window.location.replace("index.html?v=" + Date.now());
+                }, 1200);
+            }
+        })
+        .catch(() => {
+            erroreDiv.style.color = "#dc3545";
+            erroreDiv.innerText = "oops...!Errore di rete durante il login.";
+        });
     }
 </script>
+
+</body>
+</html>
