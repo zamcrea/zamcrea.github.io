@@ -191,7 +191,7 @@
             // ------------------------------
         }
     })
-    .catch(err => console.error("Errore nel caricamento dei messaggi:", err));
+    .catch(err => console.error("Oops!Il database non ti vuole dare i dati!Riprova più tardi:", err));
 }
 
 function inviaMessaggio() {
@@ -224,7 +224,7 @@ function inviaMessaggio() {
         nicknameCorrente === "Studente" ||
         nicknameCorrente === "...") {
         
-        alert("⚠️ Per poter inviare messaggi devi prima impostare un nome protetto!\n\nUsa il comando: /whoami Nome Password");
+        alert("401 Non Autorizzato!Per poter inviare messaggi devi prima impostare un nome protetto!\n\nUsa il comando: /whoami Nickname");
         return; // Interrompe la funzione: il messaggio NON viene inviato a Appwrite
     }
 
@@ -252,7 +252,7 @@ function inviaMessaggio() {
         campo.value = ""; 
         caricaMessaggi(); 
     })
-    .catch(() => alert("Errore di invio. Blame Kernel."));
+    .catch(() => alert("Errore di invio. Blame Zamy."));
 }
 
     function controllaInvio(e) {
@@ -270,6 +270,7 @@ function inviaMessaggio() {
         "2. Niente Spam: non inondare la chat di messaggi ripetitivi.  Da warning a ban\n" +
         "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/discussioni riferite alla scuola. Warning\n" +
         "4. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.\n\n" +
+        "5.NON Usare per nessun motivo il tuo nome vero o quello degli altri USA IL NICKNAME,perma-ban dalla chat" +
         "Usa /(commando) per eseguire commandi(/whoami,/rules)";
         
     alert(elencoRegole);
