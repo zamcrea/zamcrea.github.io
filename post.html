@@ -125,7 +125,7 @@
         document.getElementById("post-descrizione").value = "";
     }
 
-    function caricaPost() {
+        function caricaPost() {
         if (!inizialiAutore) return;
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents?limit=25`, {
@@ -141,42 +141,36 @@
         })
         .then(data => {
             const contenitore = document.getElementById("contenitore-post");
-            contenitore.innerHTML = "";
 
             if (data.documents && data.documents.length > 0) {
-                // Ordinamento cronologico lato client
                 const postOrdinati = data.documents.sort((a, b) => new Date(b.ora) - new Date(a.ora));
 
-                postOrdinati.forEach(post => {
-                    const postCard = document.createElement("div");
-                    postCard.className = "post-card";
+                // 1. Rimuove le card dei post che sono stati cancellati dal database
+                const tutteLeCardEsistenti = contenitore.querySelectorAll('.post-card');
+                tutteLeCardEsistenti.forEach(card => {
+                    const idCard = card.id.replace('card-post-', '');
+                    const esisteAncora = postOrdinati.some(p => p.$id === idCard);
+                    if (!esisteAncora) card.remove();
+                });
 
-                    const dataPost = post.ora ? new Date(post.ora) : new Date();
-                    let dataLeggibile = "Data non disponibile";
-                    if (!isNaN(dataPost.getTime())) {
-                        dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    }
-
-                    // Adesso likes e commenti arrivano dal server come veri array nativi
+                // 2. Aggiorna o crea i singoli post uno alla volta
+                postOrdinati.forEach((post, indice) => {
                     const listaLikes = Array.isArray(post.likes) ? post.likes : [];
                     const listaCommenti = Array.isArray(post.commenti) ? post.commenti : [];
-
+                    
                     const giaMessoLike = listaLikes.includes(inizialiAutore);
-                    const labelLike = giaMessoLike ? "👍 like messo" : "👍 ";
+                    const labelLike = giaMessoLike ? "👍 Ti piace" : "👍 Mi piace";
                     const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
 
                     let htmlCommenti = "";
                     listaCommenti.forEach(testoCommentoRaw => {
-                        // Separa l'autore dal testo del commento usando il separatore "::"
                         const divisione = testoCommentoRaw.indexOf("::");
                         let autoreComm = "Anonimo";
                         let testoComm = testoCommentoRaw;
-                        
                         if (divisione !== -1) {
                             autoreComm = testoCommentoRaw.substring(0, divisione);
                             testoComm = testoCommentoRaw.substring(divisione + 2);
                         }
-
                         htmlCommenti += `
                             <div class="comment-item">
                                 <span class="comment-author">@${autoreComm}</span>
@@ -185,32 +179,77 @@
                         `;
                     });
 
-                    postCard.innerHTML = `
-                        <div class="post-title">${post.titolo}</div>
-                        <div class="post-meta">Pubblicato da <span class="post-author">@${post.autore}</span> il ${dataLeggibile}</div>
-                        <div class="post-desc">${post.descrizione}</div>
+                    const dataPost = post.ora ? new Date(post.ora) : new Date();
+                    let dataLeggibile = "Data non disponibile";
+                    if (!isNaN(dataPost.getTime())) {
+                        dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    // Controlla se la card di questo post esiste già nella bacheca
+                    let postCard = document.getElementById(`card-post-${post.$id}`);
+
+                    if (!postCard) {
+                        // Se non esiste, crea la card da zero
+                        postCard = document.createElement("div");
+                        postCard.className = "post-card";
+                        postCard.id = `card-post-${post.$id}`;
                         
-                        <div class="post-actions">
-                            <button class="${classeLike}" onclick="gestisciLike('${post.$id}')">
-                                ${labelLike} (${listaLikes.length})
-                            </button>
-                            <span class="action-btn">💬(${listaCommenti.length})</span>
-                        </div>
-                        
-                        <div class="comments-section">
-                            <div id="lista-commenti-${post.$id}">${htmlCommenti}</div>
-                            <div class="comment-input-area">
-                                <input type="text" id="input-commento-${post.$id}" placeholder="Scrivi un commento..." onkeypress="controllaInvioCommento(event, '${post.$id}')">
-                                <button onclick="aggiungiCommento('${post.$id}')">Invia</button>
+                        postCard.innerHTML = `
+                            <div class="post-title">${post.titolo}</div>
+                            <div class="post-meta">Pubblicato da <span class="post-author">@${post.autore}</span> il ${dataLeggibile}</div>
+                            <div class="post-desc">${post.descrizione}</div>
+                            
+                            <div class="post-actions">
+                                <button class="${classeLike}" onclick="gestisciLike('${post.$id}')">
+                                    ${labelLike} (${listaLikes.length})
+                                </button>
+                                <span class="action-btn-commenti">💬(${listaCommenti.length})</span>
                             </div>
-                        </div>
-                    `;
-                    contenitore.appendChild(postCard);
+                            
+                            <div class="comments-section">
+                                <div id="lista-commenti-${post.$id}">${htmlCommenti}</div>
+                                <div class="comment-input-area">
+                                    <input type="text" id="input-commento-${post.$id}" placeholder="Scrivi un commento..." onkeypress="controllaInvioCommento(event, '${post.$id}')">
+                                    <button onclick="aggiungiCommento('${post.$id}')">Invia</button>
+                                </div>
+                            </div>
+                        `;
+                        contenitore.appendChild(postCard);
+                    } else {
+                        // Se la card esiste già, aggiorna SOLO i dati dinamici (like e commenti), lasciando l'input intatto!
+                        
+                        // Aggiorna bottone like
+                        const btnLike = postCard.querySelector('.post-actions button');
+                        if (btnLike) {
+                            btnLike.className = classeLike;
+                            btnLike.innerText = `${labelLike} (${listaLikes.length})`;
+                        }
+
+                        // Aggiorna contatore commenti
+                        const spanCommenti = postCard.querySelector('.action-btn-commenti');
+                        if (spanCommenti) {
+                            spanCommenti.innerText = `💬(${listaCommenti.length})`;
+                        }
+
+                        // Aggiorna la lista dei commenti interna senza toccare l'area di input
+                        const boxListaCommenti = document.getElementById(`lista-commenti-${post.$id}`);
+                        if (boxListaCommenti && boxListaCommenti.innerHTML !== htmlCommenti) {
+                            boxListaCommenti.innerHTML = htmlCommenti;
+                        }
+                    }
+
+                    // Mantiene il corretto ordine visivo dei post in base alla risposta del server
+                    if (contenitore.children[indice] !== postCard) {
+                        contenitore.insertBefore(postCard, contenitore.children[indice]);
+                    }
                 });
+            } else {
+                contenitore.innerHTML = "";
             }
         })
         .catch(err => console.error("Errore nel caricamento:", err));
     }
+
 
     function salvaNuovoPost() {
         const titolo = document.getElementById("post-titolo").value.trim();
