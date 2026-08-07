@@ -129,9 +129,8 @@
         .catch(err => console.error("Errore salvataggio profilo cloud:", err));
     }
 
-          function caricaMessaggi() {
-        // CORRETTO: Invia il parametro queries[]=limit(100) rispettando i vincoli di Appwrite Cloud
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?queries[]=limit(100)&orderType=ASC`, {
+              function caricaMessaggi() {
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?orderType=ASC`, {
             method: "GET",
             mode: "cors",
             headers: {
@@ -140,18 +139,16 @@
                 "X-SDK-Version": "14.0.0"
             }
         })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error("Errore risposta server Appwrite: " + res.status);
-            }
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             const box = document.getElementById("contenitore-chat");
             box.innerHTML = ""; 
 
             if (data.documents && data.documents.length > 0) {
-                data.documents.forEach(doc => {
+                // Prende solo gli ULTIMI 24 messaggi arrivati dal database
+                const messaggiDaMostrare = data.documents.slice(-24);
+
+                messaggiDaMostrare.forEach(doc => {
                     const div = document.createElement("div");
                     const tipoClasse = (doc.autore === nicknameCorrente) ? "messaggio inviato" : "messaggio ricevuto";
                     div.className = tipoClasse;
@@ -167,7 +164,7 @@
                     box.appendChild(div);
                 });
 
-                // Gestione intelligente dello scorrimento per la cronologia passata
+                // Gestione dello scorrimento per la cronologia passata
                 const vicinoAlFondo = (box.scrollHeight - box.scrollTop - box.clientHeight) < 150;
                 if (box.dataset.caricato !== "true" || vicinoAlFondo) {
                     box.scrollTop = box.scrollHeight;
@@ -175,14 +172,10 @@
                 }
             }
         })
-        .catch(err => {
-            console.error("Errore nel caricamento dei messaggi:", err);
-        });
+        .catch(err => console.error("Errore nel caricamento dei messaggi:", err));
     }
 
-    }
-
-    }
+    
 
 function inviaMessaggio() {
     const campo = document.getElementById("campo-messaggio");
