@@ -34,19 +34,21 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Metti il tuo nickname con /whoami o rispondi con /replyto Nickname messaggio..." onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Metti il tuo nickname/o un nome con cui ti identifichi scrivendo /whoami iltuonickname(quindi ad es.:/whoami KernelZam) per scrivere..." onkeypress="controllaInvio(event)">
+
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://appwrite.io";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const COLLECTION_ID = "messages"; 
     const PROFILI_COLLECTION_ID = "profili";
 
     let nicknameCorrente = "Studente";
-    let emailUtenteFittizia = "anonimo@scuolavveloce.it";
+    let emailUtenteFittizia = "anonimo@scuolavveloce.it"; // Usata come chiave per recuperare il profilo
 
+    // Rileva il dispositivo di riserva
     function ottieniNomeDispositivo() {
         const stringaBrowser = navigator.userAgent.toLowerCase();
         if (stringaBrowser.includes("ipad")) return "iPad";
@@ -56,7 +58,9 @@
         return "Dispositivo PC";
     }
 
+    // Carica il profilo memorizzato su Appwrite per questo specifico dispositivo
     function scaricaProfiloDaServer() {
+        // Generiamo una stringa univoca per il dispositivo basata sull'UserAgent per simulare un identificativo
         emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
@@ -67,8 +71,10 @@
         .then(res => res.json())
         .then(data => {
             if (data.documents && data.documents.length > 0) {
+                // Se c'è un profilo salvato nel database, usa quel nickname
                 nicknameCorrente = data.documents[0].nickname;
             } else {
+                // Altrimenti imposta il nome dispositivo standard
                 nicknameCorrente = ottieniNomeDispositivo();
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
@@ -81,13 +87,16 @@
         });
     }
 
+    // Gestisce il comando /whoami in modo invisibile salvandolo su Appwrite
     function eseguiComandoWhoami(testo) {
         const nuovoNome = testo.substring(8).trim();
         if (!nuovoNome) return;
 
+        // Cambia la grafica locale all'istante
         nicknameCorrente = nuovoNome;
         document.getElementById("nome-badge").innerText = nuovoNome;
 
+        // Controlla se esiste già un record per aggiornarlo o crearlo da zero
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
             method: "GET",
             mode: "cors",
@@ -96,6 +105,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.documents && data.documents.length > 0) {
+                // Aggiorna esistente (PUT)
                 const docId = data.documents[0].$id;
                 fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents/${docId}`, {
                     method: "PATCH",
@@ -104,6 +114,7 @@
                     body: JSON.stringify({ data: { nickname: nuovoNome } })
                 });
             } else {
+                // Crea nuovo record (POST)
                 fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
                     method: "POST",
                     mode: "cors",
@@ -118,7 +129,7 @@
         .catch(err => console.error("Errore salvataggio profilo cloud:", err));
     }
 
-    function caricaMessaggi() {
+              function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?orderType=ASC`, {
             method: "GET",
             mode: "cors",
@@ -134,7 +145,7 @@
             box.innerHTML = ""; 
 
             if (data.documents && data.documents.length > 0) {
-                // Mantiene il limite dei 24 messaggi a schermo richiesto
+                // Prende solo gli ULTIMI 24 messaggi arrivati dal database
                 const messaggiDaMostrare = data.documents.slice(-24);
 
                 messaggiDaMostrare.forEach(doc => {
@@ -145,34 +156,15 @@
                     const dataMessaggio = new Date(doc.ora);
                     const oraLeggibile = dataMessaggio.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-                    let testoFinale = doc.testo;
-                    let htmlRisposta = "";
-
-                    // Elabora graficamente il tag [REPLY:Nickname] se presente nel testo del database
-                    if (doc.testo && doc.testo.startsWith("[REPLY:")) {
-                        const fineTag = doc.testo.indexOf("]");
-                        if (fineTag !== -1) {
-                            const nicknameCitato = doc.testo.substring(7, fineTag);
-                            testoFinale = doc.testo.substring(fineTag + 1);
-                            
-                            htmlRisposta = `
-                                <div style="background: rgba(0,0,0,0.06); padding: 5px 8px; border-left: 3px solid #06911b; border-radius: 4px; margin-bottom: 5px; font-size: 0.85em;">
-                                    <span style="font-weight: bold; color: #06911b;">In risposta a @${nicknameCitato}</span>
-                                </div>
-                            `;
-                        }
-                    }
-
                     div.innerHTML = `
                         <span class="autore">${doc.autore}</span>
-                        ${htmlRisposta}
-                        <div>${testoFinale}</div>
+                        ${doc.testo}
                         <span class="orario">${oraLeggibile}</span>
                     `;
                     box.appendChild(div);
                 });
 
-                // Mantiene la posizione della barra se l'utente consulta i messaggi storici
+                // Gestione dello scorrimento per la cronologia passata
                 const vicinoAlFondo = (box.scrollHeight - box.scrollTop - box.clientHeight) < 150;
                 if (box.dataset.caricato !== "true" || vicinoAlFondo) {
                     box.scrollTop = box.scrollHeight;
@@ -183,67 +175,90 @@
         .catch(err => console.error("Errore nel caricamento dei messaggi:", err));
     }
 
-    function inviaMessaggio() {
-        const input = document.getElementById("campo-messaggio");
-        let testo = input.value.trim();
-        if (!testo) return;
+    
 
-        if (testo.startsWith("/whoami ")) {
-            eseguiComandoWhoami(testo);
-            input.value = "";
-            setTimeout(caricaMessaggi, 500);
-            return;
-        }
+function inviaMessaggio() {
+    const campo = document.getElementById("campo-messaggio");
+    const testoMessaggio = campo.value.trim();
 
-        // Converte l'input /replyto in un formato leggibile al rendering prima di inviare ad Appwrite
-        if (testo.startsWith("/replyto ")) {
-            const parametri = testo.substring(9).trim();
-            const primoSpazio = parametri.indexOf(" ");
+    if (!testoMessaggio) return;
 
-            if (primoSpazio !== -1) {
-                const targetNickname = parametri.substring(0, primoSpazio);
-                const testoRisposta = parametri.substring(primoSpazio + 1).trim();
-
-                if (testoRisposta) {
-                    testo = `[REPLY:${targetNickname}]${testoRisposta}`;
-                }
-            }
-        }
-
-        const datiMessaggio = {
-            autore: nicknameCorrente,
-            testo: testo,
-            ora: new Date().toISOString()
-        };
-
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
-            method: "POST",
-            mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({
-                documentId: "unique()",
-                data: datiMessaggio
-            })
-        })
-        .then(res => res.json())
-        .then(() => {
-            input.value = "";
-            caricaMessaggi();
-        })
-        .catch(err => console.error("Errore nell'invio del messaggio:", err));
+    // --- CONTROLLO INVISIBILE AIUTANTE ---
+    // Se l'utente sta scrivendo un comando per darsi il nome, lo facciamo passare sempre!
+    if (testoMessaggio.startsWith('/whoami ')) {
+        eseguiComandoWhoami(testoMessaggio);
+        campo.value = "";
+        return;
     }
 
-    function controllaInvio(evento) {
-        if (evento.key === "Enter") {
+    if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
+        mostraRegoleChat();
+        campo.value = "";
+        return;
+    }
+
+    // --- BLOCCO SCRITTURA PER UTENTI SENZA NOME ---
+    // Se l'utente ha ancora il nome di default del telefono, blocchiamo l'invio
+    if (nicknameCorrente === "Android" || 
+        nicknameCorrente === "iPhone" || 
+        nicknameCorrente === "iPad" || 
+        nicknameCorrente === "Mac" || 
+        nicknameCorrente === "Dispositivo PC" || 
+        nicknameCorrente === "Studente" ||
+        nicknameCorrente === "...") {
+        
+        alert(" Per poter inviare messaggi devi prima impostare un nickname!\n\nUsa il comando: /whoami Nickname");
+        return; // Interrompe la funzione: il messaggio NON viene inviato a Appwrite
+    }
+
+    // Se ha un nome valido, il codice prosegue normalmente inviando il messaggio
+    fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Appwrite-Project": PROJECT_ID,
+            "X-SDK-Name": "Web",
+            "X-SDK-Version": "14.0.0"
+        },
+        body: JSON.stringify({
+            documentId: "unique()",
+            data: {
+                testo: testoMessaggio,
+                autore: nicknameCorrente, 
+                ora: Date.now() 
+            }
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        campo.value = ""; 
+        caricaMessaggi(); 
+    })
+    .catch(() => alert("Errore di invio. Blame Zam."));
+}
+
+    function controllaInvio(e) {
+        if (e.key === 'Enter') {
             inviaMessaggio();
         }
     }
 
     scaricaProfiloDaServer();
     setInterval(caricaMessaggi, 3000);
+    function mostraRegoleChat() {
+    const elencoRegole = 
+        "REGOLE DI VVCHAT!\n\n" +
+        "1. Non insultare qualcuno/Non dire parolacce/bestemmie(parole volgari).  Può comportare da warning a perma-ban dalla chat(in base alla gravità).\n" +
+        "2. Niente Spam: non inondare la chat di messaggi ripetitivi.  Da warning a ban\n" +
+        "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/discussioni riferite alla scuola. Warning\n" +
+        "4. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.warning to ban\n\n" +
+        "5. Non usare il tuo vero nome o quello degli altri,perma ban" +
+        "Usa /(commando) per eseguire commandi(/whoami,/rules)";
+        
+    alert(elencoRegole);
+}
+
 </script>
 </body>
 </html>
