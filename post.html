@@ -92,7 +92,7 @@
 </div>
 <script>
     const PROJECT_ID = "6a608a69001dcb3466fc";
-    const ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+    const ENDPOINT = "https://fra.cloud.appwrite.io/v1"; // germania!
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
     const POSTS_COLLECTION_ID = "post"; 
 
@@ -128,7 +128,7 @@
     function caricaPost() {
         if (!inizialiAutore) return;
 
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents?orderType=DESC&limit=50`, {
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents?limit=25`, {
             method: "GET",
             mode: "cors",
             headers: { "X-Appwrite-Project": PROJECT_ID }
@@ -144,37 +144,43 @@
             contenitore.innerHTML = "";
 
             if (data.documents && data.documents.length > 0) {
-                data.documents.forEach(post => {
+                // Ordinamento cronologico lato client
+                const postOrdinati = data.documents.sort((a, b) => new Date(b.ora) - new Date(a.ora));
+
+                postOrdinati.forEach(post => {
                     const postCard = document.createElement("div");
                     postCard.className = "post-card";
 
-                    let stringaData = post.ora;
-                    if (Array.isArray(post.ora) && post.ora.length > 0) {
-                        stringaData = post.ora;
-                    }
-                    
-                    const dataPost = stringaData ? new Date(stringaData) : new Date();
+                    const dataPost = post.ora ? new Date(post.ora) : new Date();
                     let dataLeggibile = "Data non disponibile";
-                    
                     if (!isNaN(dataPost.getTime())) {
                         dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
                     }
 
-                    let listaLikes = [];
-                    let listaCommenti = [];
-                    try { if(post.likes) listaLikes = JSON.parse(post.likes); } catch(e){}
-                    try { if(post.commenti) listaCommenti = JSON.parse(post.commenti); } catch(e){}
+                    // Adesso likes e commenti arrivano dal server come veri array nativi
+                    const listaLikes = Array.isArray(post.likes) ? post.likes : [];
+                    const listaCommenti = Array.isArray(post.commenti) ? post.commenti : [];
 
                     const giaMessoLike = listaLikes.includes(inizialiAutore);
-                    const labelLike = giaMessoLike ? "👍" : "👍 Like messo";
+                    const labelLike = giaMessoLike ? "👍 like messo" : "👍 ";
                     const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
 
                     let htmlCommenti = "";
-                    listaCommenti.forEach(comm => {
+                    listaCommenti.forEach(testoCommentoRaw => {
+                        // Separa l'autore dal testo del commento usando il separatore "::"
+                        const divisione = testoCommentoRaw.indexOf("::");
+                        let autoreComm = "Anonimo";
+                        let testoComm = testoCommentoRaw;
+                        
+                        if (divisione !== -1) {
+                            autoreComm = testoCommentoRaw.substring(0, divisione);
+                            testoComm = testoCommentoRaw.substring(divisione + 2);
+                        }
+
                         htmlCommenti += `
                             <div class="comment-item">
-                                <span class="comment-author">@${comm.autore}</span>
-                                <span class="comment-text">${comm.testo}</span>
+                                <span class="comment-author">@${autoreComm}</span>
+                                <span class="comment-text">${testoComm}</span>
                             </div>
                         `;
                     });
@@ -185,7 +191,7 @@
                         <div class="post-desc">${post.descrizione}</div>
                         
                         <div class="post-actions">
-                            <button class="${classeLike}" onclick="gestisciLike('${post.$id}', '${post.likes || "[]"}')">
+                            <button class="${classeLike}" onclick="gestisciLike('${post.$id}')">
                                 ${labelLike} (${listaLikes.length})
                             </button>
                             <span class="action-btn">💬(${listaCommenti.length})</span>
@@ -194,8 +200,8 @@
                         <div class="comments-section">
                             <div id="lista-commenti-${post.$id}">${htmlCommenti}</div>
                             <div class="comment-input-area">
-                                <input type="text" id="input-commento-${post.$id}" placeholder="Scrivi un commento..." onkeypress="controllaInvioCommento(event, '${post.$id}', '${post.commenti || "[]"}')">
-                                <button onclick="aggiungiCommento('${post.$id}', '${post.commenti || "[]"}')">Invia</button>
+                                <input type="text" id="input-commento-${post.$id}" placeholder="Scrivi un commento..." onkeypress="controllaInvioCommento(event, '${post.$id}')">
+                                <button onclick="aggiungiCommento('${post.$id}')">Invia</button>
                             </div>
                         </div>
                     `;
@@ -203,10 +209,7 @@
                 });
             }
         })
-        .catch(err => {
-            console.error("Errore nel caricamento:", err);
-            alert("Blocco caricamento bacheca. Motivo: " + err.message);
-        });
+        .catch(err => console.error("Errore nel caricamento:", err));
     }
 
     function salvaNuovoPost() {
@@ -214,7 +217,7 @@
         const descrizione = document.getElementById("post-descrizione").value.trim();
 
         if (!titolo || !descrizione) {
-            alert("Non penso che serva creare un post se poi non ci scrivi nulla..compila il la sezione titolo e la descrizione.");
+            alert("Compila sia il titolo che la descrizione del post.");
             return;
         }
 
@@ -222,8 +225,8 @@
             autore: inizialiAutore,
             titolo: titolo,
             descrizione: descrizione,
-            likes: "[]",       
-            commenti: "[]",
+            likes: [],       // Invia un array vuoto nativo
+            commenti: [],    // Invia un array vuoto nativo
             ora: new Date().toISOString()
         };
 
@@ -240,120 +243,93 @@
             })
         })
         .then(res => {
-            if (!res.ok) {
-                return res.json().then(err => { throw new Error(err.message || JSON.stringify(err)); });
-            }
+            if (!res.ok) return res.json().then(err => { throw new Error(err.message); });
             return res.json();
         })
         .then(() => {
             nascondiFormPost();
             caricaPost();
         })
-        .catch(err => {
-            alert("Errore durante la pubblicazione: " + err.message);
-            console.error("Dettaglio errore Appwrite:", err);
-        });
+        .catch(err => alert("Errore pubblicazione: " + err.message));
     }
 
-        function gestisciLike(postId, stringaLikesAttuali) {
-        let likes = [];
-        
-        try { 
-            if (stringaLikesAttuali && stringaLikesAttuali !== "undefined" && stringaLikesAttuali !== "[]") {
-                // Sostituisce eventuali virgolette sporche o di escape prima del parsing
-                let stringaPulita = stringaLikesAttuali.replace(/\\"/g, '"');
-                // Se la stringa ha doppie virgolette esterne residue, le rimuove
-                if (stringaPulita.startsWith('"') && stringaPulita.endsWith('"')) {
-                    stringaPulita = stringaPulita.substring(1, stringaPulita.length - 1);
-                }
-                likes = JSON.parse(stringaPulita); 
-            }
-        } catch(e) { 
-            console.error("Errore lettura mi piace, resetto l'array:", e);
-            likes = []; 
-        }
-        
-        if (!Array.isArray(likes)) likes = [];
-
-        const indice = likes.indexOf(inizialiAutore);
-        if (indice === -1) {
-            likes.push(inizialiAutore); 
-        } else {
-            likes.splice(indice, 1); 
-        }
-
+    function gestisciLike(postId) {
+        // Scarica i dati aggiornati del post prima di modificare l'array
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
-            method: "PATCH",
+            method: "GET",
             mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({
-                data: { likes: JSON.stringify(likes) }
-            })
+            headers: { "X-Appwrite-Project": PROJECT_ID }
         })
-        .then(res => {
-            if (!res.ok) throw new Error("Errore permessi server nell'aggiornare il Like.");
-            caricaPost();
+        .then(res => res.json())
+        .then(post => {
+            let likes = Array.isArray(post.likes) ? post.likes : [];
+
+            const indice = likes.indexOf(inizialiAutore);
+            if (indice === -1) {
+                likes.push(inizialiAutore); 
+            } else {
+                likes.splice(indice, 1); 
+            }
+
+            return fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
+                method: "PATCH",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    data: { likes: likes } // Invia l'array pulito nativamente
+                })
+            });
         })
-        .catch(err => alert(err.message));
+        .then(() => caricaPost())
+        .catch(err => console.error("Errore Like:", err));
     }
 
-       function aggiungiCommento(postId, stringaCommentiAttuali) {
+    function aggiungiCommento(postId) {
         const input = document.getElementById(`input-commento-${postId}`);
         const testoCommento = input.value.trim();
         if (!testoCommento) return;
 
-        let commenti = [];
-        try { 
-            if (stringaCommentiAttuali && stringaCommentiAttuali !== "undefined" && stringaCommentiAttuali !== "[]") {
-                // Rimuove i caratteri di escape e le virgolette esterne residue che rompono il JSON
-                let stringaPulita = stringaCommentiAttuali.replace(/\\"/g, '"');
-                if (stringaPulita.startsWith('"') && stringaPulita.endsWith('"')) {
-                    stringaPulita = stringaPulita.substring(1, stringaPulita.length - 1);
-                }
-                commenti = JSON.parse(stringaPulita); 
-            }
-        } catch(e) { 
-            console.error("Errore lettura commenti, resetto l'array:", e);
-            commenti = []; 
-        }
-        
-        if (!Array.isArray(commenti)) commenti = [];
-
-        const nuovoCommento = {
-            autore: inizialiAutore,
-            testo: testoCommento,
-            ora: new Date().toISOString()
-        };
-        commenti.push(nuovoCommento);
-
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
-            method: "PATCH",
+            method: "GET",
             mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({
-                data: { commenti: JSON.stringify(commenti) }
-            })
+            headers: { "X-Appwrite-Project": PROJECT_ID }
         })
-        .then(res => {
-            if (!res.ok) throw new Error("Errore permessi server nell'inviare il Commento.");
+        .then(res => res.json())
+        .then(post => {
+            let commenti = Array.isArray(post.commenti) ? post.commenti : [];
+
+            // Salva il commento unendo autore e testo separati da "::" per evitare crash JSON
+            const stringaNuovoCommento = `${inizialiAutore}::${testoCommento}`;
+            commenti.push(stringaNuovoCommento);
+
+            return fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
+                method: "PATCH",
+                mode: "cors",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Appwrite-Project": PROJECT_ID
+                },
+                body: JSON.stringify({
+                    data: { commenti: commenti } // Invia l'array pulito nativamente
+                })
+            });
+        })
+        .then(() => {
             input.value = "";
             caricaPost();
         })
-        .catch(err => alert(err.message));
+        .catch(err => console.error("Errore Commento:", err));
     }
 
-
-    function controllaInvioCommento(evento, postId, stringaCommentiAttuali) {
+    function controllaInvioCommento(evento, postId) {
         if (evento.key === "Enter") {
-            aggiungiCommento(postId, stringaCommentiAttuali);
+            aggiungiCommento(postId);
         }
     }
+
 </script>
 </body>
 </html>
