@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VVPost - Community Board</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
+        .user-badge { position: absolute; top: 12px; right: 15px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; font-size: 0.75em; color: white; }
+        
+        .container { flex: 1; max-width: 800px; width: 100%; margin: 20px auto; padding: 0 15px; box-sizing: border-box; }
+        
+        /* Modal Finestra Bloccata Schermo */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .modal-box h3 { margin-top: 0; color: #333; }
+        .modal-box p { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+        .modal-box input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1em; text-align: center; outline: none; margin-bottom: 15px; text-transform: lowercase; }
+        .modal-box button { background: #007bff; color: white; border: none; padding: 10px 25px; border-radius: 6px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* Form di Creazione Post */
+        .create-post-btn { background: #06911b; color: white; border: none; padding: 12px 20px; border-radius: 25px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .post-form-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; display: none; }
+        .post-form-card h3 { margin-top: 0; color: #333; margin-bottom: 15px; }
+        .post-form-card input, .post-form-card textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; box-sizing: border-box; font-size: 1em; outline: none; font-family: inherit; }
+        .post-form-card textarea { resize: vertical; min-height: 80px; }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .form-actions .btn-save { background: #007bff; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .form-actions .btn-cancel { background: #dc3545; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        /* Lista dei Post */
+        .posts-list { display: flex; flex-direction: column; gap: 20px; }
+        .post-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .post-title { font-size: 1.3em; font-weight: bold; color: #1a1a1a; margin-bottom: 5px; }
+        .post-meta { font-size: 0.75em; color: #777; margin-bottom: 12px; }
+        .post-author { font-weight: bold; color: #007bff; }
+        .post-desc { font-size: 0.95em; color: #333; line-height: 1.5; white-space: pre-wrap; margin-bottom: 15px; }
+        
+        /* Interazioni (Like e Contatori) */
+        .post-actions { display: flex; gap: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 15px; }
+        .action-btn { background: none; border: none; font-size: 0.9em; font-weight: bold; color: #65676b; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; }
+        .action-btn.liked { color: #007bff; }
+        
+        /* Box Commenti Integrati */
+        .comments-section { display: flex; flex-direction: column; gap: 10px; }
+        .comment-item { background: #f0f2f5; padding: 10px 14px; border-radius: 12px; font-size: 0.9em; max-width: 90%; align-self: flex-start; margin-bottom: 5px; }
+        .comment-author { font-weight: bold; color: #128c7e; font-size: 0.85em; margin-bottom: 2px; display: block; }
+        .comment-text { color: #333; line-height: 1.3; }
+        
+        .comment-input-area { display: flex; gap: 8px; margin-top: 10px; }
+        .comment-input-area input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 0.9em; outline: none; box-sizing: border-box; }
+        .comment-input-area button { background: #007bff; color: white; border: none; padding: 0 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<script>
+    if (localStorage.getItem("utenteLoggato") !== "true") {
+        window.location.replace("login.html");
+    }
+</script>
+
+<div id="finestra-iniziali" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Identificazione Autore</h3>
+        <p>Inserisci le prime 4 iniziali della email con cui ti sei registrato all'inizio.</p>
+        <input type="text" id="input-iniziali" maxlength="4" placeholder="es. mmar" autocomplete="off">
+        <button onclick="confermaIniziali()">OK</button>
+    </div>
+</div>
+
+<div class="header">
+    VVPost - Bacheca Community
+    <div class="user-badge">Autore: <span id="autore-badge">...</span></div>
+</div>
+
+<div class="container">
+    <button class="create-post-btn" onclick="mostraFormPost()">+ Crea Nuovo Post</button>
+
+    <div id="post-form-card" class="post-form-card">
+        <h3>Nuovo Post</h3>
+        <input type="text" id="post-titolo" placeholder="Inserisci il titolo del post...">
+        <textarea id="post-descrizione" placeholder="Scrivi la descrizione o il contenuto del post..."></textarea>
+        <div class="form-actions">
+            <button class="btn-cancel" onclick="nascondiFormPost()">Annulla</button>
+            <button class="btn-save" onclick="salvaNuovoPost()">Pubblica</button>
+        </div>
+    </div>
+
+    <div id="contenitore-post" class="posts-list"></div>
+</div>
+<script>
+    const PROJECT_ID = "6a608a69001dcb3466fc";
+    const ENDPOINT = "https://appwrite.io";
+    const DATABASE_ID = "6a6359510025ce3b3c9a"; 
+    const POSTS_COLLECTION_ID = "post"; 
+
+    let inizialiAutore = "";
+
+    function confermaIniziali() {
+        const input = document.getElementById("input-iniziali");
+        const valore = input.value.trim().toLowerCase();
+
+        if (valore.length !== 4) {
+            alert("Devi inserire esattamente le prime 4 iniziali della e-mail con cui ti sei registrato(esempio: Professore@gmail.com -> Prof.");
+            return;
+        }
+
+        inizialiAutore = valore;
+        document.getElementById("autore-badge").innerText = inizialiAutore;
+        document.getElementById("finestra-iniziali").style.display = "none";
+        
+        caricaPost();
+        setInterval(caricaPost, 4000); 
+    }
+
+    function mostraFormPost() {
+        document.getElementById("post-form-card").style.display = "block";
+    }
+
+    function nascondiFormPost() {
+        document.getElementById("post-form-card").style.display = "none";
+        document.getElementById("post-titolo").value = "";
+        document.getElementById("post-descrizione").value = "";
+    }
+
+    function caricaPost() {
+        if (!inizialiAutore) return;
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents?orderType=DESC&limit=50`, {
+            method: "GET",
+            mode: "cors",
+            headers: { "X-Appwrite-Project": PROJECT_ID }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const contenitore = document.getElementById("contenitore-post");
+            contenitore.innerHTML = "";
+
+            if (data.documents && data.documents.length > 0) {
+                data.documents.forEach(post => {
+                    const postCard = document.createElement("div");
+                    postCard.className = "post-card";
+
+                    // Utilizza la colonna nativa di sistema $createdAt per non sovraccaricare il database
+                    const dataPost = post.$createdAt ? new Date(post.$createdAt) : new Date();
+                    const dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                    let listaLikes = [];
+                    let listaCommenti = [];
+                    try { if(post.likes) listaLikes = JSON.parse(post.likes); } catch(e){}
+                    try { if(post.commenti) listaCommenti = JSON.parse(post.commenti); } catch(e){}
+
+                    const giaMessoLike = listaLikes.includes(inizialiAutore);
+                    const labelLike = giaMessoLike ? "👍 Ti piace" : "👍 Mi piace";
+                    const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
+
+                    let htmlCommenti = "";
+                    listaCommenti.forEach(comm => {
+                        htmlCommenti += `
+                            <div class="comment-item">
+                                <span class="comment-author">@${comm.autore}</span>
+                                <span class="comment-text">${comm.testo}</span>
+                            </div>
+                        `;
+                    });
+
+                    postCard.innerHTML = `
+                        <div class="post-title">${post.titolo}</div>
+                        <div class="post-meta">Pubblicato da <span class="post-author">@${post.autore}</span> il ${dataLeggibile}</div>
+                        <div class="post-desc">${post.descrizione}</div>
+                        
+                        <div class="post-actions">
+                            <button class="${classeLike}" onclick="gestisciLike('${post.$id}', '${post.likes || "[]"}')">
+                                ${labelLike} (${listaLikes.length})
+                            </button>
+                            <span class="action-btn">💬 Commenti (${listaCommenti.length})</span>
+                        </div>
+                        
+                        <div class="comments-section">
+                            <div id="lista-commenti-${post.$id}">${htmlCommenti}</div>
+                            <div class="comment-input-area">
+                                <input type="text" id="input-commento-${post.$id}" placeholder="Scrivi un commento..." onkeypress="controllaInvioCommento(event, '${post.$id}', '${post.commenti || "[]"}')">
+                                <button onclick="aggiungiCommento('${post.$id}', '${post.commenti || "[]"}')">Invia</button>
+                            </div>
+                        </div>
+                    `;
+                    contenitore.appendChild(postCard);
+                });
+            }
+        })
+        .catch(err => console.error("Errore nel caricamento dei post:", err));
+    }
+
+    function salvaNuovoPost() {
+        const titolo = document.getElementById("post-titolo").value.trim();
+        const descrizione = document.getElementById("post-descrizione").value.trim();
+
+        if (!titolo || !descrizione) {
+            alert("Compila sia il titolo che la descrizione del post.");
+            return;
+        }
+
+        const datiPost = {
+            autore: inizialiAutore,
+            titolo: titolo,
+            descrizione: descrizione,
+            likes: "[]",       
+            commenti: "[]"
+        };
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents`, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                documentId: "unique()",
+                data: datiPost
+            })
+        })
+        .then(res => res.json())
+        .then(() => {
+            nascondiFormPost();
+            caricaPost();
+        })
+        .catch(err => console.error("Errore durante la pubblicazione del post:", err));
+    }
+
+    function gestisciLike(postId, stringaLikesAttuali) {
+        let likes = [];
+        try { likes = JSON.parse(stringaLikesAttuali); } catch(e){}
+
+        const indice = likes.indexOf(inizialiAutore);
+        if (indice === -1) {
+            likes.push(inizialiAutore); 
+        } else {
+            likes.splice(indice, 1); 
+        }
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
+            method: "PATCH",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                data: { likes: JSON.stringify(likes) }
+            })
+        })
+        .then(() => caricaPost())
+        .catch(err => console.error("Errore aggiornamento like:", err));
+    }
+
+    function aggiungiCommento(postId, stringaCommentiAttuali) {
+        const input = document.getElementById(`input-commento-${postId}`);
+        const testoCommento = input.value.trim();
+        if (!testoCommento) return;
+
+        let commenti = [];
+        try { commenti = JSON.parse(stringaCommentiAttuali); } catch(e){}
+
+        const nuovoCommento = {
+            autore: inizialiAutore,
+            testo: testoCommento,
+            ora: new Date().toISOString()
+        };
+        commenti.push(nuovoCommento);
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
+            method: "PATCH",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                data: { commenti: JSON.stringify(commenti) }
+            })
+        })
+        .then(() => {
+            input.value = "";
+            caricaPost();
+        })
+        .catch(err => console.error("Errore invio commento:", err));
+    }
+
+    function controllaInvioCommento(evento, postId, stringaCommentiAttuali) {
+        if (evento.key === "Enter") {
+            aggiungiCommento(postId, stringaCommentiAttuali);
+        }
+    }
+</script>
+</body>
+</html>
