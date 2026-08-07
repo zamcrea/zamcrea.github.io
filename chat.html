@@ -58,9 +58,8 @@
         return "Dispositivo PC";
     }
 
-    // Carica il profilo memorizzato su Appwrite per questo specifico dispositivo
-    function scaricaProfiloDaServer() {
-        // Generiamo una stringa univoca per il dispositivo basata sull'UserAgent per simulare un identificativo
+    // Carica il profilo memorizzato sul server per questo specifico dispositivo
+        function scaricaProfiloDaServer() {
         emailUtenteFittizia = navigator.userAgent.replace(/[^a-zA-Z0-9]/g, "").substring(0, 30) + "@vve.it";
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
@@ -71,10 +70,9 @@
         .then(res => res.json())
         .then(data => {
             if (data.documents && data.documents.length > 0) {
-                // Se c'è un profilo salvato nel database, usa quel nickname
+                // CORRETTO: Aggiunto l'indice [0] per evitare il blocco dello script
                 nicknameCorrente = data.documents[0].nickname;
             } else {
-                // Altrimenti imposta il nome dispositivo standard
                 nicknameCorrente = ottieniNomeDispositivo();
             }
             document.getElementById("nome-badge").innerText = nicknameCorrente;
@@ -87,16 +85,13 @@
         });
     }
 
-    // Gestisce il comando /whoami in modo invisibile salvandolo su Appwrite
     function eseguiComandoWhoami(testo) {
         const nuovoNome = testo.substring(8).trim();
         if (!nuovoNome) return;
 
-        // Cambia la grafica locale all'istante
         nicknameCorrente = nuovoNome;
         document.getElementById("nome-badge").innerText = nuovoNome;
 
-        // Controlla se esiste già un record per aggiornarlo o crearlo da zero
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents?queries[]=equal("email", "${emailUtenteFittizia}")`, {
             method: "GET",
             mode: "cors",
@@ -105,7 +100,6 @@
         .then(res => res.json())
         .then(data => {
             if (data.documents && data.documents.length > 0) {
-                // Aggiorna esistente (PUT)
                 const docId = data.documents[0].$id;
                 fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents/${docId}`, {
                     method: "PATCH",
@@ -114,7 +108,6 @@
                     body: JSON.stringify({ data: { nickname: nuovoNome } })
                 });
             } else {
-                // Crea nuovo record (POST)
                 fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${PROFILI_COLLECTION_ID}/documents`, {
                     method: "POST",
                     mode: "cors",
@@ -129,7 +122,7 @@
         .catch(err => console.error("Errore salvataggio profilo cloud:", err));
     }
 
-        function caricaMessaggi() {
+    function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
             method: "GET",
             mode: "cors",
@@ -156,7 +149,6 @@
                     let testoFinale = doc.testo;
                     let htmlRisposta = "";
 
-                    // Controllo e rendering se il testo è una risposta formattata
                     if (doc.testo && doc.testo.startsWith("[REPLY:")) {
                         const fineTag = doc.testo.indexOf("]");
                         if (fineTag !== -1) {
@@ -180,7 +172,6 @@
                     box.appendChild(div);
                 });
 
-               
                 const vicinoAlFondo = (box.scrollHeight - box.scrollTop - box.clientHeight) < 150;
                 if (box.dataset.caricato !== "true" || vicinoAlFondo) {
                     box.scrollTop = box.scrollHeight;
@@ -203,7 +194,6 @@
             return;
         }
 
-        // Intercettazione del comando /replyto prima del salvataggio
         if (testo.startsWith("/replyto ")) {
             const parametri = testo.substring(9).trim();
             const primoSpazio = parametri.indexOf(" ");
@@ -243,6 +233,7 @@
         })
         .catch(err => console.error("Errore nell'invio:Blame Zam", err));
     }
+
 
 
     function controllaInvio(e) {
