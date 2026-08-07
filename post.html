@@ -94,7 +94,7 @@
     const PROJECT_ID = "6a608a69001dcb3466fc";
     const ENDPOINT = "https://appwrite.io";
     const DATABASE_ID = "6a6359510025ce3b3c9a"; 
-    const POSTS_COLLECTION_ID = "post"; 
+    const POSTS_COLLECTION_ID = "posts"; 
 
     let inizialiAutore = "";
 
@@ -103,7 +103,7 @@
         const valore = input.value.trim().toLowerCase();
 
         if (valore.length !== 4) {
-            alert("Devi inserire esattamente le prime 4 iniziali della e-mail con cui ti sei registrato(esempio: Professore@gmail.com -> Prof.");
+            alert("Devi inserire esattamente le prime 4 iniziali della tua email.");
             return;
         }
 
@@ -143,9 +143,18 @@
                     const postCard = document.createElement("div");
                     postCard.className = "post-card";
 
-                    // Utilizza la colonna nativa di sistema $createdAt per non sovraccaricare il database
-                    const dataPost = post.$createdAt ? new Date(post.$createdAt) : new Date();
-                    const dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    // Supporta in modo sicuro stringhe di timestamp intere o formati corti
+                    let stringaData = post.ora;
+                    if (Array.isArray(post.ora) && post.ora.length > 0) {
+                        stringaData = post.ora[0];
+                    }
+                    
+                    const dataPost = stringaData ? new Date(stringaData) : new Date();
+                    let dataLeggibile = "Data non disponibile";
+                    
+                    if (!isNaN(dataPost.getTime())) {
+                        dataLeggibile = dataPost.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    }
 
                     let listaLikes = [];
                     let listaCommenti = [];
@@ -193,7 +202,7 @@
         .catch(err => console.error("Errore nel caricamento dei post:", err));
     }
 
-     function salvaNuovoPost() {
+    function salvaNuovoPost() {
         const titolo = document.getElementById("post-titolo").value.trim();
         const descrizione = document.getElementById("post-descrizione").value.trim();
 
@@ -202,14 +211,14 @@
             return;
         }
 
-        // Ripristinato l'invio del timestamp ISO completo sfruttando il campo Text
+        // Invia il timestamp ISO completo nel campo ora (configurato come Text)
         const datiPost = {
             autore: inizialiAutore,
             titolo: titolo,
             descrizione: descrizione,
             likes: "[]",       
             commenti: "[]",
-            ora: new Date().toISOString() 
+            ora: new Date().toISOString()
         };
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents`, {
@@ -239,40 +248,6 @@
             console.error("Dettaglio errore Appwrite:", err);
         });
     }
-
-    function aggiungiCommento(postId, stringaCommentiAttuali) {
-        const input = document.getElementById(`input-commento-${postId}`);
-        const testoCommento = input.value.trim();
-        if (!testoCommento) return;
-
-        let commenti = [];
-        try { commenti = JSON.parse(stringaCommentiAttuali); } catch(e){}
-
-        const nuovoCommento = {
-            autore: inizialiAutore,
-            testo: testoCommento,
-            ora: new Date().toISOString() // Timestamp completo anche per i commenti
-        };
-        commenti.push(nuovoCommento);
-
-        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
-            method: "PATCH",
-            mode: "cors",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Appwrite-Project": PROJECT_ID
-            },
-            body: JSON.stringify({
-                data: { commenti: JSON.stringify(commenti) }
-            })
-        })
-        .then(() => {
-            input.value = "";
-            caricaPost();
-        })
-        .catch(err => console.error("Errore invio commento:", err));
-    }
-
 
     function gestisciLike(postId, stringaLikesAttuali) {
         let likes = [];
@@ -341,3 +316,4 @@
 </script>
 </body>
 </html>
+
