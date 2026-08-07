@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VVPost - Community Board</title>
+    <title>VVPost - Communità</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         .header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
@@ -159,7 +159,7 @@
                     const listaCommenti = Array.isArray(post.commenti) ? post.commenti : [];
                     
                     const giaMessoLike = listaLikes.includes(inizialiAutore);
-                    const labelLike = giaMessoLike ? "👍 Ti piace" : "👍 Mi piace";
+                    const labelLike = giaMessoLike ? "👍 Ti piace?" : "👍";
                     const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
 
                     let htmlCommenti = "";
