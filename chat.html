@@ -129,7 +129,7 @@
         .catch(err => console.error("Errore salvataggio profilo cloud:", err));
     }
 
-    function caricaMessaggi() {
+        function caricaMessaggi() {
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents?limit=100&orderType=ASC`, {
             method: "GET",
             mode: "cors",
@@ -145,115 +145,105 @@
             box.innerHTML = ""; 
 
             if (data.documents) {
-    data.documents.forEach(doc => {
-    const div = document.createElement("div");
-    const tipoClasse = (doc.autore === nicknameCorrente) ? "messaggio inviato" : "messaggio ricevuto";
-    div.className = tipoClasse;
+                data.documents.forEach(doc => {
+                    const div = document.createElement("div");
+                    const tipoClasse = (doc.autore === nicknameCorrente) ? "messaggio inviato" : "messaggio ricevuto";
+                    div.className = tipoClasse;
 
-    const dataMessaggio = new Date(doc.ora);
-    const oraLeggibile = dataMessaggio.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                    const dataMessaggio = new Date(doc.ora);
+                    const oraLeggibile = dataMessaggio.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-    let testoFinale = doc.testo;
-    let htmlRisposta = "";
+                    let testoFinale = doc.testo;
+                    let htmlRisposta = "";
 
-    
-    if (doc.testo && doc.testo.startsWith("[REPLY:")) {
-        const fineTag = doc.testo.indexOf("]");
-        if (fineTag !== -1) {
-            const nicknameCitato = doc.testo.substring(7, fineTag);
-            testoFinale = doc.testo.substring(fineTag + 1); // Vero messaggio scritto dall'utente
-            
-            // Crea un box di citazione stilizzato dentro la bolla
-            htmlRisposta = `
-                <div style="background: rgba(0,0,0,0.06); padding: 5px 8px; border-left: 3px solid #06911b; border-radius: 4px; margin-bottom: 5px; font-size: 0.85em;">
-                    <span style="font-weight: bold; color: #06911b;">In risposta a @${nicknameCitato}</span>
-                </div>
-            `;
-        }
-    }
+                    // Controllo e rendering se il testo è una risposta formattata
+                    if (doc.testo && doc.testo.startsWith("[REPLY:")) {
+                        const fineTag = doc.testo.indexOf("]");
+                        if (fineTag !== -1) {
+                            const nicknameCitato = doc.testo.substring(7, fineTag);
+                            testoFinale = doc.testo.substring(fineTag + 1);
+                            
+                            htmlRisposta = `
+                                <div style="background: rgba(0,0,0,0.06); padding: 5px 8px; border-left: 3px solid #06911b; border-radius: 4px; margin-bottom: 5px; font-size: 0.85em;">
+                                    <span style="font-weight: bold; color: #06911b;">In risposta a @${nicknameCitato}</span>
+                                </div>
+                            `;
+                        }
+                    }
 
-    div.innerHTML = `
-        <span class="autore">${doc.autore}</span>
-        ${htmlRisposta}
-        <div>${testoFinale}</div>
-        <span class="orario">${oraLeggibile}</span>
-    `;
-    box.appendChild(div);
-});
+                    div.innerHTML = `
+                        <span class="autore">${doc.autore}</span>
+                        ${htmlRisposta}
+                        <div>${testoFinale}</div>
+                        <span class="orario">${oraLeggibile}</span>
+                    `;
+                    box.appendChild(div);
+                });
 
-  const vicinoAlFondo = (box.scrollHeight - box.scrollTop - box.clientHeight) < 150;
-
-            // Portiamo in basso la chat solo al PRIMO caricamento (se la chat era vuota) o se l'utente è vicino al fondo
-            if (box.dataset.caricato !== "true" || vicinoAlFondo) {
-                box.scrollTop = box.scrollHeight;
-                box.dataset.caricato = "true"; // Segna che il primo caricamento è avvenuto
-            }
-            // ------------------------------
-        }
-    })
-    .catch(err => console.error("Oops!Il database non ti vuole dare i dati!Riprova più tardi:", err));
-}
-
-function inviaMessaggio() {
-    const campo = document.getElementById("campo-messaggio");
-    const testoMessaggio = campo.value.trim();
-
-    if (!testoMessaggio) return;
-
-    // --- CONTROLLO INVISIBILE AIUTANTE ---
-    // Se l'utente sta scrivendo un comando per darsi il nome, lo facciamo passare sempre!
-    if (testoMessaggio.startsWith('/whoami ')) {
-        eseguiComandoWhoami(testoMessaggio);
-        campo.value = "";
-        return;
-    }
-
-    if (testoMessaggio === '/rules' || testoMessaggio === '/regole') {
-        mostraRegoleChat();
-        campo.value = "";
-        return;
-    }
-
-    // --- blocca la scrittura per membri senza nickname ---
-   
-    if (nicknameCorrente === "Android" || 
-        nicknameCorrente === "iPhone" || 
-        nicknameCorrente === "iPad" || 
-        nicknameCorrente === "Mac" || 
-        nicknameCorrente === "Dispositivo PC" || 
-        nicknameCorrente === "Studente" ||
-        nicknameCorrente === "...") {
-        
-        alert("401 Non Autorizzato!Per poter inviare messaggi devi prima impostare un nome protetto!\n\nUsa il comando: /whoami Nickname");
-        return; // Interrompe la funzione: il messaggio NON viene inviato a Appwrite
-    }
-
-    // Se ha un nome valido, il codice prosegue normalmente inviando il messaggio
-    fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
-        method: "POST",
-        mode: "cors",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Appwrite-Project": PROJECT_ID,
-            "X-SDK-Name": "Web",
-            "X-SDK-Version": "14.0.0"
-        },
-        body: JSON.stringify({
-            documentId: "unique()",
-            data: {
-                testo: testoMessaggio,
-                autore: nicknameCorrente, 
-                ora: Date.now() 
+               
+                const vicinoAlFondo = (box.scrollHeight - box.scrollTop - box.clientHeight) < 150;
+                if (box.dataset.caricato !== "true" || vicinoAlFondo) {
+                    box.scrollTop = box.scrollHeight;
+                    box.dataset.caricato = "true";
+                }
             }
         })
-    })
-    .then(res => res.json())
-    .then(() => {
-        campo.value = ""; 
-        caricaMessaggi(); 
-    })
-    .catch(() => alert("Errore di invio. Blame Zamy."));
-}
+        .catch(err => console.error("Errore nel caricamento:", err));
+    }
+
+    function inviaMessaggio() {
+        const input = document.getElementById("campo-messaggio");
+        let testo = input.value.trim();
+        if (!testo) return;
+
+        if (testo.startsWith("/whoami ")) {
+            eseguiComandoWhoami(testo);
+            input.value = "";
+            setTimeout(caricaMessaggi, 500);
+            return;
+        }
+
+        // Intercettazione del comando /replyto prima del salvataggio
+        if (testo.startsWith("/replyto ")) {
+            const parametri = testo.substring(9).trim();
+            const primoSpazio = parametri.indexOf(" ");
+
+            if (primoSpazio !== -1) {
+                const targetNickname = parametri.substring(0, primoSpazio);
+                const testoRisposta = parametri.substring(primoSpazio + 1).trim();
+
+                if (testoRisposta) {
+                    testo = `[REPLY:${targetNickname}]${testoRisposta}`;
+                }
+            }
+        }
+
+        const datiMessaggio = {
+            autore: nicknameCorrente,
+            testo: testo,
+            ora: new Date().toISOString()
+        };
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                documentId: "unique()",
+                data: datiMessaggio
+            })
+        })
+        .then(res => res.json())
+        .then(() => {
+            input.value = "";
+            caricaMessaggi();
+        })
+        .catch(err => console.error("Errore nell'invio:Blame Zam", err));
+    }
+
 
     function controllaInvio(e) {
         if (e.key === 'Enter') {
