@@ -133,7 +133,12 @@
             mode: "cors",
             headers: { "X-Appwrite-Project": PROJECT_ID }
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.message || JSON.stringify(err)); });
+            }
+            return res.json();
+        })
         .then(data => {
             const contenitore = document.getElementById("contenitore-post");
             contenitore.innerHTML = "";
@@ -143,10 +148,9 @@
                     const postCard = document.createElement("div");
                     postCard.className = "post-card";
 
-                    // Supporta in modo sicuro stringhe di timestamp intere o formati corti
                     let stringaData = post.ora;
                     if (Array.isArray(post.ora) && post.ora.length > 0) {
-                        stringaData = post.ora[0];
+                        stringaData = post.ora;
                     }
                     
                     const dataPost = stringaData ? new Date(stringaData) : new Date();
@@ -199,7 +203,10 @@
                 });
             }
         })
-        .catch(err => console.error("Errore nel caricamento dei post:", err));
+        .catch(err => {
+            console.error("Errore nel caricamento:", err);
+            alert("Blocco caricamento bacheca. Motivo: " + err.message);
+        });
     }
 
     function salvaNuovoPost() {
@@ -211,7 +218,6 @@
             return;
         }
 
-        // Invia il timestamp ISO completo nel campo ora (configurato come Text)
         const datiPost = {
             autore: inizialiAutore,
             titolo: titolo,
@@ -235,7 +241,7 @@
         })
         .then(res => {
             if (!res.ok) {
-                return res.json().then(err => { throw new Error(JSON.stringify(err)); });
+                return res.json().then(err => { throw new Error(err.message || JSON.stringify(err)); });
             }
             return res.json();
         })
@@ -244,7 +250,7 @@
             caricaPost();
         })
         .catch(err => {
-            alert("Errore durante la pubblicazione. Controlla la console del browser.");
+            alert("Errore durante la pubblicazione: " + err.message);
             console.error("Dettaglio errore Appwrite:", err);
         });
     }
@@ -316,4 +322,3 @@
 </script>
 </body>
 </html>
-
