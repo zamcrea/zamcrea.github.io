@@ -193,7 +193,7 @@
         .catch(err => console.error("Errore nel caricamento dei post:", err));
     }
 
-    function salvaNuovoPost() {
+     function salvaNuovoPost() {
         const titolo = document.getElementById("post-titolo").value.trim();
         const descrizione = document.getElementById("post-descrizione").value.trim();
 
@@ -202,12 +202,14 @@
             return;
         }
 
+        // Ripristinato l'invio del timestamp ISO completo sfruttando il campo Text
         const datiPost = {
             autore: inizialiAutore,
             titolo: titolo,
             descrizione: descrizione,
             likes: "[]",       
-            commenti: "[]"
+            commenti: "[]",
+            ora: new Date().toISOString() 
         };
 
         fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents`, {
@@ -222,13 +224,55 @@
                 data: datiPost
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(JSON.stringify(err)); });
+            }
+            return res.json();
+        })
         .then(() => {
             nascondiFormPost();
             caricaPost();
         })
-        .catch(err => console.error("Errore durante la pubblicazione del post:", err));
+        .catch(err => {
+            alert("Errore durante la pubblicazione. Controlla la console del browser.");
+            console.error("Dettaglio errore Appwrite:", err);
+        });
     }
+
+    function aggiungiCommento(postId, stringaCommentiAttuali) {
+        const input = document.getElementById(`input-commento-${postId}`);
+        const testoCommento = input.value.trim();
+        if (!testoCommento) return;
+
+        let commenti = [];
+        try { commenti = JSON.parse(stringaCommentiAttuali); } catch(e){}
+
+        const nuovoCommento = {
+            autore: inizialiAutore,
+            testo: testoCommento,
+            ora: new Date().toISOString() // Timestamp completo anche per i commenti
+        };
+        commenti.push(nuovoCommento);
+
+        fetch(`${ENDPOINT}/databases/${DATABASE_ID}/collections/${POSTS_COLLECTION_ID}/documents/${postId}`, {
+            method: "PATCH",
+            mode: "cors",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Appwrite-Project": PROJECT_ID
+            },
+            body: JSON.stringify({
+                data: { commenti: JSON.stringify(commenti) }
+            })
+        })
+        .then(() => {
+            input.value = "";
+            caricaPost();
+        })
+        .catch(err => console.error("Errore invio commento:", err));
+    }
+
 
     function gestisciLike(postId, stringaLikesAttuali) {
         let likes = [];
