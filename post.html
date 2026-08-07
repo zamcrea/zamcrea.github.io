@@ -63,20 +63,20 @@
 
 <div id="finestra-iniziali" class="modal-overlay">
     <div class="modal-box">
-        <h3>Identificazione Autore</h3>
-        <p>Inserisci le prime 4 iniziali della email con cui ti sei registrato all'inizio.</p>
+        <h3>Identificazione</h3>
+        <p>Inserisci le prime 4 iniziali della email con cui ti sei registrato a ScuolaVVeloce,metti le tue vere iniziali,altrimenti il tuo post verra cancellato!.</p>
         <input type="text" id="input-iniziali" maxlength="4" placeholder="es. mmar" autocomplete="off">
         <button onclick="confermaIniziali()">OK</button>
     </div>
 </div>
 
 <div class="header">
-    VVPost - Bacheca Community
+    VVPost - Community
     <div class="user-badge">Autore: <span id="autore-badge">...</span></div>
 </div>
 
 <div class="container">
-    <button class="create-post-btn" onclick="mostraFormPost()">+ Crea Nuovo Post</button>
+    <button class="create-post-btn" onclick="mostraFormPost()">Nuovo Post</button>
 
     <div id="post-form-card" class="post-form-card">
         <h3>Nuovo Post</h3>
@@ -166,7 +166,7 @@
                     try { if(post.commenti) listaCommenti = JSON.parse(post.commenti); } catch(e){}
 
                     const giaMessoLike = listaLikes.includes(inizialiAutore);
-                    const labelLike = giaMessoLike ? "👍 Ti piace" : "👍 Mi piace";
+                    const labelLike = giaMessoLike ? "👍" : "👍 Like messo";
                     const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
 
                     let htmlCommenti = "";
@@ -188,7 +188,7 @@
                             <button class="${classeLike}" onclick="gestisciLike('${post.$id}', '${post.likes || "[]"}')">
                                 ${labelLike} (${listaLikes.length})
                             </button>
-                            <span class="action-btn">💬 Commenti (${listaCommenti.length})</span>
+                            <span class="action-btn">💬(${listaCommenti.length})</span>
                         </div>
                         
                         <div class="comments-section">
@@ -214,7 +214,7 @@
         const descrizione = document.getElementById("post-descrizione").value.trim();
 
         if (!titolo || !descrizione) {
-            alert("Compila sia il titolo che la descrizione del post.");
+            alert("Non penso che serva creare un post se poi non ci scrivi nulla..compila il la sezione titolo e la descrizione.");
             return;
         }
 
@@ -255,9 +255,25 @@
         });
     }
 
-    function gestisciLike(postId, stringaLikesAttuali) {
+        function gestisciLike(postId, stringaLikesAttuali) {
         let likes = [];
-        try { likes = JSON.parse(stringaLikesAttuali); } catch(e){}
+        
+        try { 
+            if (stringaLikesAttuali && stringaLikesAttuali !== "undefined" && stringaLikesAttuali !== "[]") {
+                // Sostituisce eventuali virgolette sporche o di escape prima del parsing
+                let stringaPulita = stringaLikesAttuali.replace(/\\"/g, '"');
+                // Se la stringa ha doppie virgolette esterne residue, le rimuove
+                if (stringaPulita.startsWith('"') && stringaPulita.endsWith('"')) {
+                    stringaPulita = stringaPulita.substring(1, stringaPulita.length - 1);
+                }
+                likes = JSON.parse(stringaPulita); 
+            }
+        } catch(e) { 
+            console.error("Errore lettura mi piace, resetto l'array:", e);
+            likes = []; 
+        }
+        
+        if (!Array.isArray(likes)) likes = [];
 
         const indice = likes.indexOf(inizialiAutore);
         if (indice === -1) {
@@ -277,17 +293,34 @@
                 data: { likes: JSON.stringify(likes) }
             })
         })
-        .then(() => caricaPost())
-        .catch(err => console.error("Errore aggiornamento like:", err));
+        .then(res => {
+            if (!res.ok) throw new Error("Errore permessi server nell'aggiornare il Like.");
+            caricaPost();
+        })
+        .catch(err => alert(err.message));
     }
 
-    function aggiungiCommento(postId, stringaCommentiAttuali) {
+       function aggiungiCommento(postId, stringaCommentiAttuali) {
         const input = document.getElementById(`input-commento-${postId}`);
         const testoCommento = input.value.trim();
         if (!testoCommento) return;
 
         let commenti = [];
-        try { commenti = JSON.parse(stringaCommentiAttuali); } catch(e){}
+        try { 
+            if (stringaCommentiAttuali && stringaCommentiAttuali !== "undefined" && stringaCommentiAttuali !== "[]") {
+                // Rimuove i caratteri di escape e le virgolette esterne residue che rompono il JSON
+                let stringaPulita = stringaCommentiAttuali.replace(/\\"/g, '"');
+                if (stringaPulita.startsWith('"') && stringaPulita.endsWith('"')) {
+                    stringaPulita = stringaPulita.substring(1, stringaPulita.length - 1);
+                }
+                commenti = JSON.parse(stringaPulita); 
+            }
+        } catch(e) { 
+            console.error("Errore lettura commenti, resetto l'array:", e);
+            commenti = []; 
+        }
+        
+        if (!Array.isArray(commenti)) commenti = [];
 
         const nuovoCommento = {
             autore: inizialiAutore,
@@ -307,12 +340,14 @@
                 data: { commenti: JSON.stringify(commenti) }
             })
         })
-        .then(() => {
+        .then(res => {
+            if (!res.ok) throw new Error("Errore permessi server nell'inviare il Commento.");
             input.value = "";
             caricaPost();
         })
-        .catch(err => console.error("Errore invio commento:", err));
+        .catch(err => alert(err.message));
     }
+
 
     function controllaInvioCommento(evento, postId, stringaCommentiAttuali) {
         if (evento.key === "Enter") {
