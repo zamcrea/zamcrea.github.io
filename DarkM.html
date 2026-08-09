@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<script>
+    // Non sono cosi ingenuo,penso...
+    if (localStorage.getItem("utenteLoggato") !== "true") {
+        window.location.replace("login.html");
+    }
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScuolaVeloce</title>
+    <title>ScuolaVVeloce</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f7f7f7 ; padding: 15px; }
         .card { background: black; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 1); }
@@ -14,13 +21,13 @@
 <body>
     <h2>Compiti/Verifiche</h2>
     <p>Ciao!Per avvisarti,alcuni compiti potrebbero mancare,non essere accurati ecc..quindi cerca di verificare prima i dati con i tuoi compagni o dal registro(o semplicente ascolta all insegnante durante la classe).Quindi questo sito deve essere usato per aiutare,NON per sostituire,quindi non incolparmi!Grazie!.</p>
-   <p>Versione 0.7</p>
+   <p>Versione 0.8</p>
     <div id="lista-compiti">Sto Caricando...impaziente..</div>
     
 
 <a href="./Medie.html" style="display: block; text-align: center; padding: 12px; background-color: #002b08; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Calcola La media dei tuoi Voti Insufficienti</a>
 <a href="./index.html" style="display: block; text-align: center; padding: 12px; background-color: #666; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Ritorna alla "home"i</a>
-
+<a href="./Post.html" style="display: block; text-align: center; padding: 12px; background-color: #013220; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> VVPost-Guarda cosa fanno gli altri</a>
 <a href="./chat.html" style="display: block; text-align: center; padding: 12px; background-color: #1c3d3b; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Chatta con altri utenti!(ancora in sviluppo)</a>
     <script>
     // Questo metodo (percorso relativo) funziona ovunque senza configurare link lunghi!
@@ -64,12 +71,6 @@
         });
 </script>
    
-<script>
-    // Non sono cosi ingenuo,penso...
-    if (localStorage.getItem("utenteLoggato") !== "true") {
-        window.location.replace("login.html");
-    }
-</script>
 
     <a href="DarkO.html" style="display: block; text-align: center; padding: 12px; background-color: #421633; color:  white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Guarda a che ore sono presenti i tuoi fantastici prof</a>
 <div>Creato da Zam e ChryChrySardegna!</div>
