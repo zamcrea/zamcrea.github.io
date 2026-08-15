@@ -3,74 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScuolaVeloce</title>
+    <title>Yo Yo Yomi-</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #b1e3d6; padding: 15px; }
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .materia { font-weight: bold; color: #0d0d0d; }
-        .data { font-size: 0.8em; color: #6e0202; }
+        :root {
+            --bg-principal: #0b0c10;
+            --bg-card: #1f2833;
+            --accent-neon: #00f2fe;
+            --accent-purple: #9b51e0;
+            --text-muted: #aaa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        /* Barra di Navigazione */
+        header {
+            background: linear-gradient(90deg, #121212, var(--bg-card));
+            padding: 20px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent-purple);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-neon);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent-neon);
+        }
+
+        /* Griglia Giochi */
+        .games-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--accent-neon);
+            padding-left: 15px;
+            text-transform: uppercase;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .game-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(155,81,224,0.3);
+            border-color: var(--accent-purple);
+        }
+
+        .game-thumb {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(45deg, #111, #333);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .game-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .game-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .game-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .play-btn {
+            display: block;
+            background: #222;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            border: 1px solid var(--accent-neon);
+            transition: background 0.3s;
+        }
+
+        .play-btn:hover {
+            background: var(--accent-neon);
+            color: var(--bg-principal);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            margin-top: 80px;
+            color: #555;
+            font-size: 14px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
     </style>
 </head>
 <body>
-    <script>
-    // Non sono cosi ingenuo,penso...
-    if (localStorage.getItem("utenteLoggato") !== "true") {
-        window.location.replace("login.html");
-    }
-</script>
-    <h2>Compiti/Verifiche</h2>
-    <p>Ciao!Per avvisarti,alcuni compiti potrebbero mancare,non essere accurati ecc..quindi cerca di verificare prima i dati con i tuoi compagni o dal registro(o semplicente ascolta all insegnante durante la classe).Quindi questo sito deve essere usato per aiutare,NON per sostituire,quindi non incolparmi!Grazie!.</p>
-   <p>Versione 0.9.2(build 4)</p>
-    <div id="lista-compiti">Sto Caricando...impaziente..</div>
-    
 
-<a href="./Medie.html" style="display: block; text-align: center; padding: 12px; background-color: #007bff; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Calcola La media dei tuoi Voti Insufficienti</a>
-<a href="./DarkM.html" style="display: block; text-align: center; padding: 12px; background-color: #666; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Per i tuoi preziosi occhi</a>
-<a href="./chat.html" style="display: block; text-align: center; padding: 12px; background-color: #55d9b8; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Chatta con altri utenti!</a>
-    <script>
-    // Questo metodo (percorso relativo) funziona ovunque senza configurare link lunghi!
-    const url = 'compiti.json?v=' + Date.now(); 
+    <header>
+        <div class="logo">ZGiochi</div>
+    </header>
 
-    fetch(url)
-        .then(response => {
-            // Se il file non viene trovato (Errore 404), te lo dice chiaramente
-            if (!response.ok) {
-                throw new Error(`File non trovato o errore server (404) (Stato: ${response.status})`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            const contenitore = document.getElementById('lista-compiti');
-            contenitore.innerHTML = ''; // Svuota il testo di caricamento
+    <main class="games-container">
+        <h2 class="section-title">Giochi</h2>
+        <div class="games-grid">
             
-            if (data.length === 0) {
-                contenitore.innerHTML = '<p>Nessun compito presente,ritieniti fortunato..</p>';
-                return;
-            }
+            <!-- Card 1: 2048 -->
+            <div class="game-card">
+                <div class="game-thumb">PlaceHolder</div>
+                <div class="game-info">
+                    <div>
+                        <h3 class="game-title">2048</h3>
+                        <p class="game-desc">Gioco di Gabriele cirulli</p>
+                    </div>
+                    <a href="https://zamcrea.github.io/2048/" class="play-btn">Test</a>
+                </div>
+            </div>
 
-            data.forEach(compito => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.innerHTML = `
-                    <div class="materia">${compito.materia}</div>
-                    <div class="data">Scadenza: ${compito.data}</div>
-                    <p>${compito.descrizione}</p>
-                `;
-                contenitore.appendChild(card);
-            });
-        })
-        .catch(error => {
-            // Mostra sul display del telefono l'errore esatto per capire cosa manca
-            document.getElementById('lista-compiti').innerHTML = `
-                <div style="color: red; font-weight: bold;">Sembra che qualcuno ha toccato qualcosa di sbagliato.."Blame Kernel"</div>
-                <div style="font-size: 0.8em; color: #ba0606;">Dettaglio: ${error.message}</div>
-            `;
-            console.error(error);
-        });
-</script>
-    <a href="Orario.html" style="display: block; text-align: center; padding: 12px; background-color: #c9d9f0; color:  white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Guarda a che ore sono presenti i tuoi fantastici prof</a>
-  <a href="./post.html" style="display: block; text-align: center; padding: 12px; background-color: #B2FFFF; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;"> Discuti su...qualche argomento?</a>
-    <div>Creato da Zam e ChryChrySardegna!</div>
-    <a href="./supporto.html" style="display: block; text-align: center; padding: 12px; background-color: #1983; color: white; text-decoration: none; border-radius: 8px; font-family: Arial, sans-serif; font-weight: bold; margin: 15px 0;">Segnalaci bug/Chiedi supporto/Utilizza ScuolaVVeloce con la tua classe,ti forniremo tutte le info che servono</a>
+          <div class="game-card">
+                <div class="game-thumb">Placeholder</div>
+                <div class="game-info">
+                    <div>
+                        <h3 class="game-title">2048 </h3>
+                        <p class="game-desc">Gioco di Gabriele cirulli</p>
+                    </div>
+                    <a href="https://zamcrea.github.io/2048/" class="play-btn">Test</a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; Ye non è per niente vuoto.</p>
+    </footer>
+
 </body>
 </html>
+
