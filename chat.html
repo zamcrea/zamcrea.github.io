@@ -8,7 +8,7 @@
 </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VVChat</title>
+    <title>WhatsUp</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
         .chat-header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
@@ -26,7 +26,7 @@
 <body>
 
 <div class="chat-header">
-    ChatVVeloce
+  whatsup
     <div style="position: absolute; top: 10px; right: 15px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; font-size: 0.75em; color: white;">
         Utente: <span id="nome-badge">...</span>
     </div>
@@ -249,12 +249,11 @@ function inviaMessaggio() {
     setInterval(caricaMessaggi, 3000);
     function mostraRegoleChat() {
     const elencoRegole = 
-        "REGOLE DI VVCHAT!\n\n" +
-        "1. Non insultare qualcuno/Non dire parolacce/bestemmie(parole volgari).  Può comportare da warning a perma-ban dalla chat(in base alla gravità).\n" +
+        "REGOLE DI WHATSUP\n\n" +
+        "1. Non insultare qualcuno:Non dire parolacce/bestemmie(parole volgari).  Può comportare da warning a perma-ban dalla chat(in base alla gravità).\n" +
         "2. Niente Spam: non inondare la chat di messaggi ripetitivi.  Da warning a ban\n" +
-        "3. Contenuti appropriati: usa la chat solo per questioni scolastiche/discussioni riferite alla scuola. Warning\n" +
-        "4. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.warning to ban\n\n" +
-        "5. Non usare il tuo vero nome o quello degli altri,perma ban" +
+        "3. Usa la tua identità: non usare nomi offensivi/falsi con /whoami,metti solo nomi che ti identificano,metti il tuo nickname.da warning a ban\n\n" +
+        "4. Non usare il tuo vero nome o quello degli altri,perma ban" +
         "Usa /(commando) per eseguire commandi(/whoami,/rules)";
         
     alert(elencoRegole);
