@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VVPost - Communità</title>
+    <title>Velox-Community</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         .header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
@@ -64,14 +64,14 @@
 <div id="finestra-iniziali" class="modal-overlay">
     <div class="modal-box">
         <h3>Identificazione</h3>
-        <p>Inserisci le prime 4 iniziali della email con cui ti sei registrato a ScuolaVVeloce,metti le tue vere iniziali,altrimenti il tuo post verra cancellato!.</p>
+        <p>Inserisci le prime 4 iniziali della email con cui ti sei registrato a Velox,metti le tue vere iniziali,altrimenti i tuoi commenti,like ecc..verrano cancellati.</p>
         <input type="text" id="input-iniziali" maxlength="4" placeholder="es. ricc ->ricchi@gmail.com" autocomplete="off">
         <button onclick="confermaIniziali()">OK</button>
     </div>
 </div>
 
 <div class="header">
-    VVPost - Community
+    Velox - Community
     <div class="user-badge">Autore: <span id="autore-badge">...</span></div>
 </div>
 
@@ -80,10 +80,10 @@
 
     <div id="post-form-card" class="post-form-card">
         <h3>Nuovo Post</h3>
-        <input type="text" id="post-titolo" placeholder="Vedi se gli altri possono dirti se domani c'è la tua materia preferita,oppure quella che ti piace di meno...">
-        <textarea id="post-descrizione" placeholder="Oppure chiedi agli altri come si sentono dopo aver fatto 50 ore di scuola(e 20 ore aggiuntive di compiti)...nel mentre che tu eri a casa a dormire..."></textarea>
+        <input type="text" id="post-titolo" placeholder="Descrivi il tuo amore per 2048...">
+        <textarea id="post-descrizione" placeholder="Ti piace clumsy birds e non flappy birds giusto?Chi gioca a flappy birds poi.."></textarea>
         <div class="form-actions">
-            <button class="btn-cancel" onclick="nascondiFormPost()">Annulla</button>
+            <button class="btn-cancel" onclick="nascondiFormPost()">Cancella</button>
             <button class="btn-save" onclick="salvaNuovoPost()">Pubblica</button>
         </div>
     </div>
@@ -159,13 +159,13 @@
                     const listaCommenti = Array.isArray(post.commenti) ? post.commenti : [];
                     
                     const giaMessoLike = listaLikes.includes(inizialiAutore);
-                    const labelLike = giaMessoLike ? "👍 Ti piace?" : "👍";
+                    const labelLike = giaMessoLike ? "👍" : "👍 Ti piace?";
                     const classeLike = giaMessoLike ? "action-btn liked" : "action-btn";
 
                     let htmlCommenti = "";
                     listaCommenti.forEach(testoCommentoRaw => {
                         const divisione = testoCommentoRaw.indexOf("::");
-                        let autoreComm = "Anonimo";
+                        let autoreComm = "Bambino Randomico"; //if you know,you know
                         let testoComm = testoCommentoRaw;
                         if (divisione !== -1) {
                             autoreComm = testoCommentoRaw.substring(0, divisione);
