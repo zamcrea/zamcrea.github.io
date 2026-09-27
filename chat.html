@@ -10,9 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsUp</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
-        .chat-header { background: #007bff; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
-        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #e5ddd5; }
+        body { font-family: Arial, sans-serif; background: #013873; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
+        .chat-header { background: #000d96; color: white; padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); position: relative; }
+        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #006b2d; }
         .messaggio { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 0.95em; line-height: 1.4; word-wrap: break-word; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
         .inviato { background: #d9fdd3; align-self: flex-end; color: #303030; }
         .ricevuto { background: #ffffff; align-self: flex-start; color: #303030; }
@@ -35,7 +35,7 @@
 <div class="chat-box" id="contenitore-chat"></div>
 
 <div class="input-area">
-    <input type="text" id="campo-messaggio" placeholder="Metti il tuo nickname/o un nome con cui ti identifichi scrivendo /whoami iltuonickname(quindi ad es.:/whoami KernelZam) per scrivere..." onkeypress="controllaInvio(event)">
+    <input type="text" id="campo-messaggio" placeholder="Clicca qua per scrivere...Regole = /rules per chattare /whoami (mettiquailtuousername)" onkeypress="controllaInvio(event)">
 
     <button onclick="inviaMessaggio()">Invia</button>
 </div>
